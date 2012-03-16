@@ -22,6 +22,11 @@
     (when (= (count r) (count u))
       (every? true? (map #(component-matches? %1 %2) r u)))))
 
+(defn any-matches?
+  "Determines if there are any routes that match a given URI path"
+  [uri-path]
+  (some #(route-matches? (first %) uri-path) @*routes*))
+
 (defn extract-components
   "Extract the match data from the URI path into a hash map"
   [route uri-path]

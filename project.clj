@@ -1,4 +1,4 @@
-(defproject secretary "0.1.0-SNAPSHOT"
+(defproject secretary "0.2.0-SNAPSHOT"
   :description "A client-side router for ClojureScript."
   :dependencies [[org.clojure/clojure "1.3.0"]]
   :url "https://github.com/gf3/secretary"
