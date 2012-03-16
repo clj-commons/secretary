@@ -7,7 +7,7 @@ A client-side router for ClojureScript.
 In your `project.clj`:
 
 ```clojure
-[secretary "0.1.0-SNAPSHOT"]
+[secretary "0.2.0-SNAPSHOT"]
 ```
 
 Using with your app:
