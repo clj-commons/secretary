@@ -14,6 +14,9 @@
   (when (= (first r) \:)
     {(keyword (apply str (rest r))) u}))
 
+(defn- exact-match? [r u]
+  (= r u))
+
 (defn route-matches?
   "A predicate to determine if a route matches a URI path"
   [route uri-path]
@@ -40,6 +43,8 @@
 (defn dispatch!
   "Dispatch an action for a given route if it matches the URI path"
   [uri-path]
-  (when-first [[route action] (filter #(route-matches? (first %) uri-path) @*routes*)]
-    (action (extract-components route uri-path))))
+  (if-let [[route action] (first (filter #(exact-match? (first %) uri-path) @*routes*))]
+    (action {})
+    (when-first [[route action] (filter #(route-matches? (first %) uri-path) @*routes*)]
+      (action (extract-components route uri-path)))))
 
