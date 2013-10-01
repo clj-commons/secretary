@@ -1,6 +1,7 @@
 (defproject secretary "0.2.0"
   :description "A client-side router for ClojureScript."
-  :dependencies [[org.clojure/clojure "1.3.0"]]
+  :dependencies [[org.clojure/clojure "1.5.1"]
+                 [org.clojure/clojurescript "0.0-1896"]]
   :url "https://github.com/gf3/secretary"
   :license {:name "Eclipse Public License - v 1.0"
             :url "http://www.eclipse.org/legal/epl-v10.html"
