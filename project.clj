@@ -15,7 +15,7 @@
                    :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}}
   :aliases {"run-tests" ["do" "clean," "cljsbuild" "test"]}
   :cljsbuild {:builds [{:source-paths ["src/" "test/"]
-                        :compiler {:output-to "resources/test.js"
+                        :compiler {:output-to "target/js/test.js"
                                    :optimizations :whitespace
                                    :pretty-print true}}]
-              :test-commands {"unit-tests" ["phantomjs"  "runners/phantomjs.js" "resources/test.js"]}})
+              :test-commands {"unit-tests" ["phantomjs"  "runners/phantomjs.js" "target/js/test.js"]}})
