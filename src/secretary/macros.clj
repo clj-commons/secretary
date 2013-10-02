@@ -4,7 +4,7 @@
   "Add a route to the dispatcher."
   [route destruct & body]
   (let [destruct (if (vector? destruct)
-                   `{:keys ~destruct}
+                   {:keys destruct}
                    destruct)]
     `(swap! secretary.core/*routes* assoc ~route
             (fn [params#]
