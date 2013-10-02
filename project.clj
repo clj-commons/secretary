@@ -6,12 +6,16 @@
             :distribution :repo
             :comments "same as Clojure"}
   :dependencies [[org.clojure/clojure "1.5.1"]
-                 [org.clojure/clojurescript "0.0-1896"]]
+                 [org.clojure/clojurescript "0.0-1896"]
+                 [com.cemerick/clojurescript.test "0.0.4"]]
   :plugins [[lein-cljsbuild "0.3.3"]] 
+  :hooks [leiningen.cljsbuild]
   :profiles {:dev {:dependencies [[com.cemerick/piggieback "0.1.0"]]
                    :plugins [[com.cemerick/austin "0.1.1"]]
                    :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}}
-  :cljsbuild {:builds [{:source-paths ["src/"]
-                        :compiler {:output-to "resources/secretary.js"
+  :aliases {"run-tests" ["do" "clean," "cljsbuild" "test"]}
+  :cljsbuild {:builds [{:source-paths ["src/" "test/"]
+                        :compiler {:output-to "resources/test.js"
                                    :optimizations :whitespace
-                                   :pretty-print true}}]})
+                                   :pretty-print true}}]
+              :test-commands {"unit-tests" ["phantomjs"  "runners/phantomjs.js" "resources/test.js"]}})
