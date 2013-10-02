@@ -41,15 +41,15 @@
                  :when (not (nil? c))]
              c))))
 
-(defn find-route [uri-path]
-  (first (filter #(exact-match? (first %) uri-path) @*routes*)))
+(defn filter-routes [f uri-path]
+  (filter #(f (first %) uri-path) @*routes*))
 
 (defn dispatch!
   "Dispatch an action for a given route if it matches the URI path"
   [uri-path]
-  (if-let [[route action] (find-route uri-path)]
+  (if-let [[route action] (first (filter-routes exact-match? uri-path))]
     (action {})
-    (when-first [[route action] (find-route uri-path)]
+    (when-first [[route action] (filter-routes route-matches? uri-path)]
       (action (extract-components route uri-path)))))
 
 
