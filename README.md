@@ -13,7 +13,7 @@ In your `project.clj`:
 Using with your app:
 
 ```clojure
-(ns myapp
+(ns app
   (:use-macros [secretary.macros :only [defroute]])
   (:require [secretary.core :as secretary]))
 
@@ -26,7 +26,11 @@ Using with your app:
 (secretary/dispatch! "/users/gf3/food/pizza") ; "User: gf3 Food: pizza"
 ```
 
+## Contributors
+
+* [@gf3](https://github.com/gf3) (Gianni Chiappetta)
+* [@noprompt](https://github.com/noprompt) (Joel Holdbrooks)
+
 ## License
 
 Distributed under the Eclipse Public License, the same as Clojure.
-
