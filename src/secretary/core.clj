@@ -1,4 +1,4 @@
-(ns secretary.macros)
+(ns secretary.core)
 
 (defmacro defroute
   "Add a route to the dispatcher."
