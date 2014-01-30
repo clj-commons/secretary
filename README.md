@@ -7,15 +7,14 @@ A client-side router for ClojureScript.
 In your `project.clj`:
 
 ```clojure
-[secretary "0.4.0"]
+[secretary "0.5.0"]
 ```
 
 Using with your app:
 
 ```clojure
 (ns app
-  (:use-macros [secretary.macros :only [defroute]])
-  (:require [secretary.core :as secretary]))
+  (:require [secretary.core :as secretary :include-macros true :refer [defroute]]))
 
 (defroute "/users/:id/food/:name" {:as params}
   (.log js/console (str "User: " (:id params) " Food: " (:name params))))
