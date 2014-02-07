@@ -17,10 +17,10 @@ Using with your app:
   (:require [secretary.core :as secretary :include-macros true :refer [defroute]]))
 
 (defroute "/users/:id/food/:name" {:as params}
-  (.log js/console (str "User: " (:id params) " Food: " (:name params))))
+  (js/console.log  (str "User: " (:id params) " Food: " (:name params))))
 
 (defroute "/users/:id" {:keys [id]}
-  (.log js/console (str "User: " id)))
+  (js/console.log (str "User: " id)))
 
 (secretary/dispatch! "/users/gf3/food/pizza") ; "User: gf3 Food: pizza"
 ```
