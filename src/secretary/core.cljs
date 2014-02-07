@@ -65,3 +65,7 @@
         [action params] (parse-action uri-path)
         params (merge params query-params)]
     (action params)))
+
+(defn render-route [route m]
+  (.replace route (js/RegExp. ":[^/]+" "g") (fn [$1] (let [lookup (keyword (subs $1 1))]
+                                        (m lookup $1)))))
