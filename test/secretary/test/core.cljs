@@ -18,6 +18,9 @@
 (defroute "/search-2" {:keys [query-params]}
   query-params)
 
+(defroute food-route "/food/:food" {:keys [food]}
+  (str "food-" food))
+
 (deftest route-test 
   (testing "dispatch!"
     (is (= (secretary/dispatch! "/")
@@ -28,6 +31,12 @@
            "1"))
     (is (= (secretary/dispatch! "/users/kevin/food/bacon")
            "kevinbacon")))
+
+  (testing "named routes"
+    (is (fn? food-route))
+    (is (fn? (defroute "pickles" {})))
+    (is (= (food-route {:food "biscuits"})
+           "/food/biscuits")))
 
   (testing "query-params"
     (is (not (contains? (secretary/dispatch! "/search-1")
@@ -42,3 +51,14 @@
                  "&bar=" (js/encodeURIComponent p2))]
       (is (= (secretary/dispatch! r)
              {"foo" p1 "bar" p2})))))
+
+
+(deftest render-route-test
+  (testing "interpolates correctly"
+    (is (= (secretary/render-route "/users/:id" {:id 1})
+           "/users/1"))
+    (is (= (secretary/render-route "/users/:id/food/:food" {:id "kevin" :food "bacon"})
+           "/users/kevin/food/bacon")))
+  (testing "leaves param in string if not in map"
+    (is (= (secretary/render-route "/users/:id" {})
+           "/users/:id"))))
