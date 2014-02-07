@@ -29,6 +29,7 @@ Using with your app:
 
 * [@gf3](https://github.com/gf3) (Gianni Chiappetta)
 * [@noprompt](https://github.com/noprompt) (Joel Holdbrooks)
+* [@joelash](https://github.com/joelash) (Joel Ash)
 
 ## License
 
