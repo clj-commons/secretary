@@ -12,7 +12,7 @@
   (or (param? r) (= r u)))
 
 (defn- extract-component [r u]
-  (when (param? r) 
+  (when (param? r)
     {(keyword (subs r 1)) u}))
 
 (defn- exact-match? [r u]
@@ -47,6 +47,9 @@
        (assoc m k v)))
    {}
    (string/split query-string #"&")))
+
+;; Temporary alias.
+(def parse-query-params decode-query-params)
 
 (defn extract-components
   "Extract the match data from the URI path into a hash map"
