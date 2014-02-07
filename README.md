@@ -17,7 +17,7 @@ Using with your app:
   (:require [secretary.core :as secretary :include-macros true :refer [defroute]]))
 
 (defroute "/users/:id/food/:name" {:as params}
-  (js/console.log  (str "User: " (:id params) " Food: " (:name params))))
+  (js/console.log (str "User: " (:id params) " Food: " (:name params))))
 
 (defroute "/users/:id" {:keys [id]}
   (js/console.log (str "User: " id)))
