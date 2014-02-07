@@ -67,5 +67,6 @@
     (action params)))
 
 (defn render-route [route m]
-  (.replace route (js/RegExp. ":[^/]+" "g") (fn [$1] (let [lookup (keyword (subs $1 1))]
-                                        (m lookup $1)))))
+  (.replace route (js/RegExp. ":[^/]+" "g")
+            (fn [$1] (let [lookup (keyword (subs $1 1))]
+                      (m lookup $1)))))
