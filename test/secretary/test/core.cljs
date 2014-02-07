@@ -1,7 +1,7 @@
 (ns secretary.test.core
   (:require [cemerick.cljs.test :as t]
             [secretary.core :as secretary :include-macros true :refer [defroute]])
-  (:require-macros [cemerick.cljs.test :refer [deftest is testing]]))
+  (:require-macros [cemerick.cljs.test :refer [deftest is are testing]]))
 
 (defroute "/" [] 1)
 
@@ -52,13 +52,26 @@
       (is (= (secretary/dispatch! r)
              {"foo" p1 "bar" p2})))))
 
+(deftest encode-query-params-test
+  (testing "handles query params"
+    (let [query-params {"id" "kevin" "food" "bacon"}
+          encoded (secretary/encode-query-params query-params)]
+      (is (= (secretary/decode-query-params encoded)
+             query-params)))))
 
 (deftest render-route-test
   (testing "interpolates correctly"
     (is (= (secretary/render-route "/users/:id" {:id 1})
            "/users/1"))
     (is (= (secretary/render-route "/users/:id/food/:food" {:id "kevin" :food "bacon"})
-           "/users/kevin/food/bacon")))
+           "/users/kevin/food/bacon"))
+    (is (= (secretary/render-route "/users/:id" {:id 123})
+           "/users/123"))
+    (is (= (secretary/render-route "/users/:id" {:id 123 :query-params {:page 2 :per-page 10}})
+           "/users/123?page=2&per-page=10"))
+    (is (= (secretary/render-route "/users/:id" {:id 123} {:query-params {:page 2 :per-page 10}})
+           "/users/123?page=2&per-page=10")))
+  
   (testing "leaves param in string if not in map"
     (is (= (secretary/render-route "/users/:id" {})
            "/users/:id"))))
