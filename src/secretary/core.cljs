@@ -1,9 +1,23 @@
 (ns secretary.core
   (:require [clojure.string :as string]))
 
+(def ^:dynamic *config* (atom {:prefix ""}))
+
 (def ^:dynamic *routes* (atom {}))
 
 (def ^:private slash #"/")
+
+(defn get-config
+  "Gets a value for *config* at path."
+  [path]
+  (let [path (if (sequential? path) path [path])]
+    (get-in @*config* path)))
+
+(defn set-config!
+  "Associates a value val for *config* at path."
+  [path val]
+  (let [path (if (sequential? path) path [path])]
+    (swap! *config* assoc-in path val)))
 
 (defn- param? [r]
   (= (first r) \:))
@@ -84,10 +98,9 @@
   ([route {:keys [query-params] :as m}]
      (let [path (.replace route (js/RegExp. ":[^/]+" "g")
                           (fn [$1] (let [lookup (keyword (subs $1 1))]
-                                    (m lookup $1))))]
+                                     (m lookup $1))))
+           path (str (get-config [:prefix]) path)]
        (if-let [query-string (and query-params
                                   (encode-query-params query-params))]
          (str path "?" query-string)
          path))))
-
-
