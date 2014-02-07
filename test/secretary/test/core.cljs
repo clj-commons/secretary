@@ -61,6 +61,8 @@
 
 (deftest render-route-test
   (testing "interpolates correctly"
+    (is (= (secretary/render-route "/")
+           "/"))
     (is (= (secretary/render-route "/users/:id" {:id 1})
            "/users/1"))
     (is (= (secretary/render-route "/users/:id/food/:food" {:id "kevin" :food "bacon"})

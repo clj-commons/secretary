@@ -93,8 +93,6 @@
     (action params)))
 
 (defn render-route
-  ([route params opts]
-     (render-route route (merge params opts)))
   ([route {:keys [query-params] :as m}]
      (let [path (.replace route (js/RegExp. ":[^/]+" "g")
                           (fn [$1] (let [lookup (keyword (subs $1 1))]
@@ -103,4 +101,8 @@
        (if-let [query-string (and query-params
                                   (encode-query-params query-params))]
          (str path "?" query-string)
-         path))))
+         path)))
+  ([route params opts]
+     (render-route route (merge params opts)))
+  ([route]
+     (render-route route {})))
