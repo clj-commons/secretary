@@ -10,8 +10,8 @@
         destruct (if (vector? destruct)
                    {:keys destruct}
                    destruct)
-        fn-spec `([m#]
-                    (secretary.core/render-route ~route m#))
+        fn-spec `([& args#]
+                    (apply secretary.core/render-route ~route args#))
         fn-body (if fn-name
                   (concat (list 'defn fn-name) fn-spec)
                   (cons 'fn fn-spec))]

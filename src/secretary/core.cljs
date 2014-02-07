@@ -29,7 +29,15 @@
 (defn filter-routes [pred uri-path]
   (filter #(pred (first %) uri-path) @*routes*))
 
-(defn parse-query-params
+(defn encode-query-params
+  "Turns a map of query parameters into url encoded string."
+  [query-params]
+  (->> (map
+        (fn [[k v]] (str (name k) "=" (js/encodeURIComponent (str v))))
+        query-params)
+       (string/join "&")))
+
+(defn decode-query-params
   "Extract a map of query parameters from a query string."
   [query-string]
   (reduce
@@ -61,12 +69,22 @@
   [uri]
   (let [[uri-path query-string] (string/split uri #"\?")
         query-params (when query-string
-                       {:query-params (parse-query-params query-string)})
+                       {:query-params (decode-query-params query-string)})
         [action params] (parse-action uri-path)
+        action (or action identity)
         params (merge params query-params)]
     (action params)))
 
-(defn render-route [route m]
-  (.replace route (js/RegExp. ":[^/]+" "g")
-            (fn [$1] (let [lookup (keyword (subs $1 1))]
-                      (m lookup $1)))))
+(defn render-route
+  ([route params opts]
+     (render-route route (merge params opts)))
+  ([route {:keys [query-params] :as m}]
+     (let [path (.replace route (js/RegExp. ":[^/]+" "g")
+                          (fn [$1] (let [lookup (keyword (subs $1 1))]
+                                    (m lookup $1))))]
+       (if-let [query-string (and query-params
+                                  (encode-query-params query-params))]
+         (str path "?" query-string)
+         path))))
+
+
