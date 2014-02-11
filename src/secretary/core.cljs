@@ -1,11 +1,9 @@
 (ns secretary.core
   (:require [clojure.string :as string]))
 
+;; Configuration
+
 (def ^:dynamic *config* (atom {:prefix ""}))
-
-(def ^:dynamic *routes* (atom {}))
-
-(def ^:private slash #"/")
 
 (defn get-config
   "Gets a value for *config* at path."
@@ -19,29 +17,7 @@
   (let [path (if (sequential? path) path [path])]
     (swap! *config* assoc-in path val)))
 
-(defn- param? [r]
-  (= (first r) \:))
-
-(defn- component-matches? [r u]
-  (or (param? r) (= r u)))
-
-(defn- extract-component [r u]
-  (when (param? r)
-    {(keyword (subs r 1)) u}))
-
-(defn- exact-match? [r u]
-  (= r u))
-
-(defn route-matches?
-  "A predicate to determine if a route matches a URI path."
-  [route uri-path]
-  (let [r (string/split route slash)
-        u (string/split uri-path slash)]
-    (when (= (count r) (count u))
-      (every? true? (map #(component-matches? %1 %2) r u)))))
-
-(defn filter-routes [pred uri-path]
-  (filter #(pred (first %) uri-path) @*routes*))
+;; Parameter encoding/decoding
 
 (defn encode-query-params
   "Turns a map of query parameters into url encoded string."
@@ -62,24 +38,94 @@
    {}
    (string/split query-string #"&")))
 
-;; Temporary alias.
-(def parse-query-params decode-query-params)
+;; Route compilation
 
-(defn extract-components
-  "Extract the match data from the URI path into a hash map"
-  [route uri-path]
-  (when (route-matches? route uri-path)
-    (apply merge
-      (for [z (zipmap (string/split route slash) (string/split uri-path slash))
-            :let [c (apply extract-component z)]
-            :when (not (nil? c))]
-        c))))
+(defn re-matches* [re s]
+  (let [ms (clojure.core/re-matches re s)]
+    (when ms
+      (if (sequential? ms) ms [ms ms]))))
 
-(defn parse-action [uri-path]
- (if-let [[route action] (first (filter-routes exact-match? uri-path))]
-   [action {}]
-   (when-first [[route action] (filter-routes route-matches? uri-path)]
-     [action (extract-components route uri-path)])))
+(def ^:private re-escape-chars
+  (set "\\.*+|?()[]{}$^"))
+
+(defn- re-escape [s]
+ (reduce
+  (fn [s c]
+    (if (re-escape-chars c)
+      (str s \\ c)
+      (str s c)))
+  ""
+  s))
+
+(defn- lex* [s clauses]
+  (some
+   (fn [[re action]]
+     (when-let [[m c] (re-find re s)]
+       [(subs s (count m)) (action c)]))
+   clauses))
+
+(defn- lex-route [s clauses]
+  (loop [s s pattern "" params []]
+    (if (seq s)
+      (let [[s [r p]] (lex* s clauses)]
+        (recur s (str pattern r) (conj params p)))
+      [(re-pattern (str \^ pattern \$)) (remove nil? params)])))
+
+(defprotocol IRouteMatches
+  (route-matches [this route]))
+
+(defn compile-route [route]
+  (let [clauses [[#"^\*([^\s.:*/]*)" ;; Splats, named splates
+                  (fn [v]
+                    (let [r "(.*?)"
+                          p (if (seq v)
+                              (keyword v)
+                              :*)]
+                      [r p]))]
+                 [#"^\:([^\s.:*/]+)" ;; Params
+                  (fn [v]
+                    (let [r "([^,;/]+)"
+                          p (keyword v)]
+                      [r p]))]
+                 [#"^([^:*]+)" ;; Literals 
+                  (fn [v]
+                    (let [r (re-escape v)]
+                      [r]))]]
+       [re params] (lex-route route clauses)]
+   (reify IRouteMatches
+     (route-matches [_ route]
+       (when-let [[_ & ms] (re-matches* re (js/decodeURIComponent route))]
+         (->> (interleave params ms)
+              (partition 2)
+              (merge-with vector {})))))))
+
+;; Routes adding/removing
+
+(def ^:dynamic *routes*
+  (atom []))
+
+(defn add-route! [route action]
+  (swap! *routes* conj [(compile-route route) action route]))
+
+(defn remove-route! [route]
+  (swap! *routes*
+         (fn [rs]
+           (filterv
+            (fn [[_ _ route-source]]
+              (not= route route-source))
+            rs))))
+
+(defn reset-routes! []
+  (reset! *routes* []))
+
+;; Route lookup and dispatch
+
+(defn- locate-route [route]
+ (some
+  (fn [[compiled-route action]]
+    (when-let [params (route-matches compiled-route route)]
+      [action (route-matches compiled-route route)]))
+  @*routes*))
 
 (defn dispatch!
   "Dispatch an action for a given route if it matches the URI path"
@@ -87,16 +133,24 @@
   (let [[uri-path query-string] (string/split uri #"\?")
         query-params (when query-string
                        {:query-params (decode-query-params query-string)})
-        [action params] (parse-action uri-path)
+        [action params] (locate-route uri-path)
         action (or action identity)
         params (merge params query-params)]
     (action params)))
 
+;; Route rendering
+
 (defn render-route
   ([route {:keys [query-params] :as m}]
-     (let [path (.replace route (js/RegExp. ":[^/]+" "g")
-                          (fn [$1] (let [lookup (keyword (subs $1 1))]
-                                     (m lookup $1))))
+     (let [a (atom m)
+           path (.replace route (js/RegExp. ":[^\\s.:*/]+|\\*[^\\s.:*/]*" "g")
+                          (fn [$1] (let [lookup (keyword (subs $1 1))
+                                         v (@a lookup)]
+                                     (if (sequential? v)
+                                       (do
+                                         (swap! a assoc lookup (next v))
+                                         (first v))
+                                       (or v $1)))))
            path (str (get-config [:prefix]) path)]
        (if-let [query-string (and query-params
                                   (encode-query-params query-params))]

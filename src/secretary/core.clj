@@ -16,8 +16,8 @@
                   (concat (list 'defn fn-name) fn-spec)
                   (cons 'fn fn-spec))]
     `(do
-       (swap! secretary.core/*routes* assoc ~route
-                (fn [params#]
-                  (let [~destruct params#]
-                    ~@body)))
+       (let [action# (fn [params#]
+                       (let [~destruct params#]
+                         ~@body))]
+         (secretary.core/add-route! ~route action#))
        ~fn-body)))

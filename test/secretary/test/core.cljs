@@ -3,42 +3,49 @@
             [secretary.core :as secretary :include-macros true :refer [defroute]])
   (:require-macros [cemerick.cljs.test :refer [deftest is are testing]]))
 
-(defroute "/" [] 1)
+;; Test helpers
 
-(defroute "/users" [] "users")
+(defn compile-and-match [r t]
+  (-> (secretary/compile-route r)
+      (secretary/route-matches t)))
 
-(defroute "/users/:id" [id] id)
-
-(defroute "/users/:id/food/:food" {:keys [id food]}
-  (str id food))
-
-(defroute "/search-1" {:as params}
-  params)
-
-(defroute "/search-2" {:keys [query-params]}
-  query-params)
-
-(defroute food-route "/food/:food" {:keys [food]}
-  (str "food-" food))
+;; Tests
 
 (deftest route-test 
   (testing "dispatch!"
+    (secretary/reset-routes!)
+    (secretary/add-route! "/" (constantly "BAM!"))
+    (secretary/add-route! "/users" (constantly "ZAP!"))
+    (secretary/add-route! "/users/:id" identity)
+    (secretary/add-route! "/users/:id/food/:food" identity)
+
     (is (= (secretary/dispatch! "/")
-           1))
+           "BAM!"))
     (is (= (secretary/dispatch! "/users")
-           "users"))
+           "ZAP!"))
     (is (= (secretary/dispatch! "/users/1")
-           "1"))
+           {:id "1"}))
     (is (= (secretary/dispatch! "/users/kevin/food/bacon")
-           "kevinbacon")))
+           {:id "kevin", :food "bacon"})))
 
   (testing "named routes"
+    (secretary/reset-routes!)
+
+    (defroute food-route "/food/:food" {:keys [food]})
+
     (is (fn? food-route))
-    (is (fn? (defroute "pickles" {})))
+    (is (fn? (defroute "/pickles" {})))
     (is (= (food-route {:food "biscuits"})
            "/food/biscuits")))
 
   (testing "query-params"
+    (secretary/reset-routes!)
+    (defroute "/search-1" {:as params}
+      params)
+
+    (defroute "/search-2" {:keys [query-params]}
+      query-params)
+
     (is (not (contains? (secretary/dispatch! "/search-1")
                         :query-params)))
     (is (contains? (secretary/dispatch! "/search-1?foo=bar")
@@ -50,7 +57,30 @@
                  "foo=" (js/encodeURIComponent p1)
                  "&bar=" (js/encodeURIComponent p2))]
       (is (= (secretary/dispatch! r)
-             {"foo" p1 "bar" p2})))))
+             {"foo" p1 "bar" p2}))))
+
+  (testing "non-encoded-routes"
+    (is (compile-and-match "/foo bar baz" "/foo%20bar%20baz")))
+
+  (testing "utf-8 routes"
+    (is (= (compile-and-match "/:x" "/%E3%81%8A%E3%81%AF%E3%82%88%E3%81%86")
+           {:x "おはよう"})))
+
+  (testing "splats"
+    (is (= (compile-and-match "*" "")
+           {:* ""}))
+    (is (= (compile-and-match "*" "/foo/bar")
+           {:* "/foo/bar"}))
+    (is (= (compile-and-match "*.*" "cat.bat")
+           {:* ["cat" "bat"]}))
+    (is (= (compile-and-match "*path/:file.:ext" "/loller/skates/xxx.zip")
+           {:path "/loller/skates"
+            :file "xxx"
+            :ext "zip"}))
+    (is (= (compile-and-match "/*a/*b/*c" "/lol/123/abc/look/at/me")
+           {:a "lol"
+            :b "123"
+            :c "abc/look/at/me"}))))
 
 (deftest encode-query-params-test
   (testing "handles query params"
@@ -72,7 +102,17 @@
     (is (= (secretary/render-route "/users/:id" {:id 123 :query-params {:page 2 :per-page 10}})
            "/users/123?page=2&per-page=10"))
     (is (= (secretary/render-route "/users/:id" {:id 123} {:query-params {:page 2 :per-page 10}})
-           "/users/123?page=2&per-page=10")))
+           "/users/123?page=2&per-page=10"))
+    (is (= (secretary/render-route "/:id/:id" {:id [1 2]})
+           "/1/2"))
+    (is (= (secretary/render-route "/*id/:id" {:id [1 2]})
+           "/1/2"))
+    (is (= (secretary/render-route "/*x/*y" {:x "lmao/rofl/gtfo"
+                                             :y "k/thx/bai"})
+           "/lmao/rofl/gtfo/k/thx/bai"))
+    (is (= (secretary/render-route "/*.:format" {:* "blood"
+                                                 :format "tarzan"})))
+    (is (= (secretary/render-route "/*.*" {:* ["stab" "wound"]}))))
 
   (testing "it adds prefixes"
     (binding [secretary/*config* (atom {:prefix "#"})]
