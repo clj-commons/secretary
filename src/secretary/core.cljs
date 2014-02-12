@@ -105,7 +105,10 @@
   (atom []))
 
 (defn add-route! [route action]
-  (swap! *routes* conj [(compile-route route) action route]))
+  (let [compiled-route (if (satisfies? IRouteMatches route)
+                         route
+                         (compile-route route))]
+    (swap! *routes* conj [compiled-route action route])))
 
 (defn remove-route! [route]
   (swap! *routes*
