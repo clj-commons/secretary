@@ -12,12 +12,13 @@
 ;; Tests
 
 (deftest route-test 
+  (is (= 1 1))
   (testing "dispatch!"
     (secretary/reset-routes!)
-    (secretary/add-route! "/" (constantly "BAM!"))
-    (secretary/add-route! "/users" (constantly "ZAP!"))
-    (secretary/add-route! "/users/:id" identity)
-    (secretary/add-route! "/users/:id/food/:food" identity)
+    (defroute "/" [] "BAM!")
+    (defroute "/users" [] "ZAP!")
+    (defroute "/users/:id" {:as params} params)
+    (defroute "/users/:id/food/:food" {:as params} params)
 
     (is (= (secretary/dispatch! "/")
            "BAM!"))
@@ -40,11 +41,8 @@
 
   (testing "query-params"
     (secretary/reset-routes!)
-    (defroute "/search-1" {:as params}
-      params)
-
-    (defroute "/search-2" {:keys [query-params]}
-      query-params)
+    (defroute "/search-1" {:as params} params)
+    (defroute "/search-2" [query-params] query-params)
 
     (is (not (contains? (secretary/dispatch! "/search-1")
                         :query-params)))
