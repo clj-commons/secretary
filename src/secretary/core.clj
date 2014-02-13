@@ -11,7 +11,7 @@
                    {:keys destruct}
                    destruct)
         fn-spec `([& args#]
-                    (apply secretary.core/render-route ~route args#))
+                    (apply secretary.core/render-route* ~route args#))
         fn-body (if fn-name
                   (concat (list 'defn fn-name) fn-spec)
                   (cons 'fn fn-spec))]

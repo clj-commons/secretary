@@ -99,8 +99,6 @@
            "/users/123"))
     (is (= (secretary/render-route "/users/:id" {:id 123 :query-params {:page 2 :per-page 10}})
            "/users/123?page=2&per-page=10"))
-    (is (= (secretary/render-route "/users/:id" {:id 123} {:query-params {:page 2 :per-page 10}})
-           "/users/123?page=2&per-page=10"))
     (is (= (secretary/render-route "/:id/:id" {:id [1 2]})
            "/1/2"))
     (is (= (secretary/render-route "/*id/:id" {:id [1 2]})

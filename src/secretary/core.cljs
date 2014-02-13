@@ -1,9 +1,22 @@
 (ns secretary.core
   (:require [clojure.string :as string]))
 
+;;======================================================================
+;; Protocols
+
+(defprotocol IRouteMatches
+  (route-matches [this route]))
+
+(defprotocol IRenderRoute
+  (render-route
+    [this]
+    [this params]))
+
+;;======================================================================
 ;; Configuration
 
-(def ^:dynamic *config* (atom {:prefix ""}))
+(def ^:dynamic *config*
+  (atom {:prefix ""}))
 
 (defn get-config
   "Gets a value for *config* at path."
@@ -17,13 +30,17 @@
   (let [path (if (sequential? path) path [path])]
     (swap! *config* assoc-in path val)))
 
+;;======================================================================
 ;; Parameter encoding/decoding
+
+(def encode js/encodeURIComponent)
+(def decode js/decodeURIComponent)
 
 (defn encode-query-params
   "Turns a map of query parameters into url encoded string."
   [query-params]
   (->> (map
-        (fn [[k v]] (str (name k) "=" (js/encodeURIComponent (str v))))
+        (fn [[k v]] (str (name k) "=" (encode (str v))))
         query-params)
        (string/join "&")))
 
@@ -33,14 +50,20 @@
   (reduce
    (fn [m param]
      (let [[k v] (string/split param #"=" 2)
-           v (js/decodeURIComponent v)]
+           v (decode v)]
        (assoc m k v)))
    {}
    (string/split query-string #"&")))
 
+;;======================================================================
 ;; Route compilation
 
-(defn re-matches* [re s]
+(defn- re-matches*
+  "Like re-matches but result is a always vector. If re does not
+  capture matches then it will return a vector of [m m] as if it had a
+  single capture. Other wise it maintains consistent behavior with
+  re-matches. "
+  [re s]
   (let [ms (clojure.core/re-matches re s)]
     (when ms
       (if (sequential? ms) ms [ms ms]))))
@@ -71,10 +94,7 @@
         (recur s (str pattern r) (conj params p)))
       [(re-pattern (str \^ pattern \$)) (remove nil? params)])))
 
-(defprotocol IRouteMatches
-  (route-matches [this route]))
-
-(defn compile-route [route]
+(defn- compile-route [route]
   (let [clauses [[#"^\*([^\s.:*/]*)" ;; Splats, named splates
                   (fn [v]
                     (let [r "(.*?)"
@@ -94,44 +114,53 @@
        [re params] (lex-route route clauses)]
    (reify IRouteMatches
      (route-matches [_ route]
-       (when-let [[_ & ms] (re-matches* re (js/decodeURIComponent route))]
+       (when-let [[_ & ms] (re-matches* re (decode route))]
          (->> (interleave params ms)
               (partition 2)
               (merge-with vector {})))))))
 
+;;======================================================================
+;; Route rendering
+
+(defn ^:internal render-route* [obj & args]
+  (when (satisfies? IRenderRoute obj)
+    (apply render-route obj args)))
+
+;;======================================================================
 ;; Routes adding/removing
 
 (def ^:dynamic *routes*
   (atom []))
 
-(defn add-route! [route action]
-  (let [compiled-route (if (satisfies? IRouteMatches route)
-                         route
-                         (compile-route route))]
-    (swap! *routes* conj [compiled-route action route])))
+(defn add-route! [obj action]
+  (let [obj (if (string? obj)
+              (compile-route obj)
+              obj)]
+    (swap! *routes* conj [obj action])))
 
-(defn remove-route! [route]
+(defn remove-route! [obj]
   (swap! *routes*
          (fn [rs]
            (filterv
-            (fn [[_ _ route-source]]
-              (not= route route-source))
+            (fn [[x _]]
+              (not= x obj))
             rs))))
 
 (defn reset-routes! []
   (reset! *routes* []))
 
+;;======================================================================
 ;; Route lookup and dispatch
 
 (defn- locate-route [route]
- (some
-  (fn [[compiled-route action]]
-    (when-let [params (route-matches compiled-route route)]
-      [action (route-matches compiled-route route)]))
-  @*routes*))
+  (some
+   (fn [[compiled-route action]]
+     (when-let [params (route-matches compiled-route route)]
+       [action (route-matches compiled-route route)]))
+   @*routes*))
 
 (defn dispatch!
-  "Dispatch an action for a given route if it matches the URI path"
+  "Dispatch an action for a given route if it matches the URI path."
   [uri]
   (let [[uri-path query-string] (string/split uri #"\?")
         query-params (when query-string
@@ -141,12 +170,28 @@
         params (merge params query-params)]
     (action params)))
 
-;; Route rendering
+;;======================================================================
+;; Protocol implementations 
 
-(defn render-route
-  ([route {:keys [query-params] :as m}]
-     (let [a (atom m)
-           path (.replace route (js/RegExp. ":[^\\s.:*/]+|\\*[^\\s.:*/]*" "g")
+(extend-protocol IRouteMatches
+  string
+  (route-matches [this route]
+    (route-matches (compile-route this) (decode route)))
+
+  js/RegExp
+  (route-matches [this route]
+    (when-let [[_ & ms] (re-matches* this route)]
+      (vec ms))))
+
+(extend-protocol IRenderRoute
+  string
+  (render-route [this]
+    (render-route this {}))
+
+  (render-route [this params]
+     (let [{:keys [query-params] :as m} params
+           a (atom m)
+           path (.replace this (js/RegExp. ":[^\\s.:*/]+|\\*[^\\s.:*/]*" "g")
                           (fn [$1] (let [lookup (keyword (subs $1 1))
                                          v (@a lookup)]
                                      (if (sequential? v)
@@ -158,8 +203,4 @@
        (if-let [query-string (and query-params
                                   (encode-query-params query-params))]
          (str path "?" query-string)
-         path)))
-  ([route params opts]
-     (render-route route (merge params opts)))
-  ([route]
-     (render-route route {})))
+         path))))
