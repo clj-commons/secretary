@@ -40,7 +40,10 @@
   "Turns a map of query parameters into url encoded string."
   [query-params]
   (->> (map
-        (fn [[k v]] (str (name k) "=" (encode (str v))))
+        (fn [[k v]]
+          (str (name k) "=" (encode (if (keyword? v)
+                                      (name v)
+                                      (str v)))))
         query-params)
        (string/join "&")))
 
