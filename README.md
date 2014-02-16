@@ -11,7 +11,7 @@ A client-side router for ClojureScript.
   * [Parameter destructuring](#parameter-destructuring)
   * [Query parmeters](#query-parameters)
   * [Named routes](#named-routes)
-- [Example with history](#example-with-history)
+- [Example with history](#example-with-googhistory)
 - [Available protocols](#available-protocols)
 - [Contributors](#contributors)
 
