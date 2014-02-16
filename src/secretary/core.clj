@@ -7,17 +7,25 @@
   (let [[fn-name route destruct body] (if (symbol? route)
                                         [route destruct (first body) (rest body)]
                                         [nil route destruct body])
-        destruct (if (vector? destruct)
-                   {:keys destruct}
-                   destruct)
         fn-spec `([& args#]
-                    (apply secretary.core/render-route ~route args#))
+                    (apply secretary.core/render-route* ~route args#))
         fn-body (if fn-name
                   (concat (list 'defn fn-name) fn-spec)
                   (cons 'fn fn-spec))]
-    `(do
-       (swap! secretary.core/*routes* assoc ~route
-                (fn [params#]
-                  (let [~destruct params#]
-                    ~@body)))
+
+    (when-not (or (map? destruct) (vector? destruct))
+      (throw (Exception. (str "defroute bindings must be a map or vector, given " (pr-str destruct)))))
+
+    `(let [action# (fn [params#]
+                     (cond
+                      (map? params#)
+                      (let [~(if (vector? destruct)
+                               {:keys destruct}
+                               destruct) params#]
+                        ~@body)
+
+                      (vector? params#)
+                      (let [~destruct params#]
+                        ~@body)))]
+       (secretary.core/add-route! ~route action#)
        ~fn-body)))
