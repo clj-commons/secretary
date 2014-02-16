@@ -105,20 +105,33 @@
            {:id "kevin", :food "bacon"})))
 
   (testing "dispatch! with query-params"
+    (secretary/reset-routes!)
     (defroute "/search-1" {:as params} params)
-    (defroute "/search-2" [query-params] query-params)
 
     (is (not (contains? (secretary/dispatch! "/search-1")
                         :query-params)))
+
     (is (contains? (secretary/dispatch! "/search-1?foo=bar")
                    :query-params))
+
+    (defroute "/search-2" [query-params] query-params)
+
     (let [s "abc123 !@#$%^&*"
           [p1 p2] (take 2 (iterate #(apply str (shuffle %)) s))
           r (str "/search-2?"
                  "foo=" (js/encodeURIComponent p1)
                  "&bar=" (js/encodeURIComponent p2))]
       (is (= (secretary/dispatch! r)
-             {"foo" p1 "bar" p2}))))
+             {"foo" p1 "bar" p2})))
+
+    (defroute #"/([a-z]+)/search" [letters {:keys [query-params]}]
+      [letters query-params])
+
+    (is (= (secretary/dispatch! "/abc/search")
+           ["abc" nil]))
+
+    (is (= (secretary/dispatch! "/abc/search?flavor=pineapple&walnuts=true")
+           ["abc" {"flavor" "pineapple" "walnuts" "true"}])))
 
   (testing "dispatch! with regex routes"
     (secretary/reset-routes!)
