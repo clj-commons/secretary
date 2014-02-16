@@ -211,13 +211,14 @@
     (let [{:keys [query-params] :as m} params
           a (atom m)
           path (.replace this (js/RegExp. ":[^\\s.:*/]+|\\*[^\\s.:*/]*" "g")
-                         (fn [$1] (let [lookup (keyword (subs $1 1))
-                                        v (@a lookup)]
-                                    (if (sequential? v)
-                                      (do
-                                        (swap! a assoc lookup (next v))
-                                        (first v))
-                                      (or v $1)))))
+                         (fn [$1]
+                           (let [lookup (keyword (subs $1 1))
+                                 v (@a lookup)]
+                             (if (sequential? v)
+                               (do
+                                 (swap! a assoc lookup (next v))
+                                 (first v))
+                               (or v $1)))))
           path (str (get-config [:prefix]) path)]
       (if-let [query-string (and query-params
                                  (encode-query-params query-params))]
