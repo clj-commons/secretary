@@ -58,6 +58,10 @@
 ;;======================================================================
 ;; Route compilation
 
+;; The implementation for route compilation was inspired by Clout and
+;; modified to suit JavaScript and Secretary.
+;; SEE: https://github.com/weavejester/clout
+
 (defn- re-matches*
   "Like re-matches but result is a always vector. If re does not
   capture matches then it will return a vector of [m m] as if it had a
@@ -80,21 +84,33 @@
   ""
   s))
 
-(defn- lex* [s clauses]
+(defn- lex*
+  "Attempt to lex a single token from s with clauses. Each clause is a
+  pair of [regexp action] where action is a function. regexp is
+  expected to begin with ^ and contain a single capture. If the
+  attempt is successful a vector of [s-without-token (action capture)]
+  is returned. Otherwise the result is nil."
+  [s clauses]
   (some
    (fn [[re action]]
      (when-let [[m c] (re-find re s)]
        [(subs s (count m)) (action c)]))
    clauses))
 
-(defn- lex-route [s clauses]
+(defn- lex-route
+  "Return a pair of [regex params]. regex is a compiled regular
+  expression for matching routes. params is a list of route param
+  names (:*, :id, etc.). "
+  [s clauses]
   (loop [s s pattern "" params []]
     (if (seq s)
       (let [[s [r p]] (lex* s clauses)]
         (recur s (str pattern r) (conj params p)))
       [(re-pattern (str \^ pattern \$)) (remove nil? params)])))
 
-(defn- compile-route [route]
+(defn- compile-route
+  "Given a route return an instance of IRouteMatches."
+  [route]
   (let [clauses [[#"^\*([^\s.:*/]*)" ;; Splats, named splates
                   (fn [v]
                     (let [r "(.*?)"
@@ -189,18 +205,18 @@
     (render-route this {}))
 
   (render-route [this params]
-     (let [{:keys [query-params] :as m} params
-           a (atom m)
-           path (.replace this (js/RegExp. ":[^\\s.:*/]+|\\*[^\\s.:*/]*" "g")
-                          (fn [$1] (let [lookup (keyword (subs $1 1))
-                                         v (@a lookup)]
-                                     (if (sequential? v)
-                                       (do
-                                         (swap! a assoc lookup (next v))
-                                         (first v))
-                                       (or v $1)))))
-           path (str (get-config [:prefix]) path)]
-       (if-let [query-string (and query-params
-                                  (encode-query-params query-params))]
-         (str path "?" query-string)
-         path))))
+    (let [{:keys [query-params] :as m} params
+          a (atom m)
+          path (.replace this (js/RegExp. ":[^\\s.:*/]+|\\*[^\\s.:*/]*" "g")
+                         (fn [$1] (let [lookup (keyword (subs $1 1))
+                                        v (@a lookup)]
+                                    (if (sequential? v)
+                                      (do
+                                        (swap! a assoc lookup (next v))
+                                        (first v))
+                                      (or v $1)))))
+          path (str (get-config [:prefix]) path)]
+      (if-let [query-string (and query-params
+                                 (encode-query-params query-params))]
+        (str path "?" query-string)
+        path))))
