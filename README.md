@@ -11,6 +11,7 @@ A client-side router for ClojureScript.
   * [Parameter destructuring](#parameter-destructuring)
   * [Query parmeters](#query-parameters)
   * [Named routes](#named-routes)
+- [Example with history](#example-with-history)
 - [Available protocols](#available-protocols)
 - [Contributors](#contributors)
 
@@ -193,8 +194,46 @@ to prefix gnerated URIs with a "#".
 ;; => "#/users/1"
 ```
 
+### Available protocols
 
-### Example with history
+You can extend Secretary's protocols to your own data types and
+records if you need special functionality.
+
+- [`IRenderRoute`](#irenderroute)
+- [`IRouteMatches`](#iroutematches)
+
+#### `IRenderRoute`
+
+Most of the time the defaults will be good enough but on occasion you
+may need custom route rendering. To do this implement `IRenderRoute`
+for your type or record.
+
+```clojure
+(defrecord User [id]
+  secretary/IRenderRoute
+  (render-route [_]
+    (str "/users/" id))
+
+  (render-route [this params]
+    (str (secretary/render-route this) "?"
+         (secretary/encode-query-params params))))
+
+(secretary/render-route (User. 1))
+;; => "/users/1"
+(secretary/render-route (User. 1) {:action :delete})
+;; => "/users/1?action=delete"
+```
+
+#### `IRouteMatches`
+
+It is seldom you will ever need to create your own route matching
+implementation as the built in `String` and `RegExp` routes matchers
+should be fine for most applications. Still, if you have a suitable
+use case then this protocol is available. If your intention is to is
+to use it with `defroute` your implementation must return a map or
+vector.
+
+### Example with `goog.History`
 
 ```clojure
 (ns app.routes
@@ -234,50 +273,11 @@ to prefix gnerated URIs with a "#".
 (defroute "*" []
   (set-html! application "<h1>LOL! YOU LOST!</h1>"))
 
-(def history
-  (let [h (History.)]
-    (goog.events/listen h EventType/NAVIGATE #(secretary/dispatch! (.-token %)))
-    (doto h (.setEnabled h true))))
+;; Quick and dirty history configuration.
+(let [h (History.)]
+  (goog.events/listen h EventType/NAVIGATE #(secretary/dispatch! (.-token %)))
+  (doto h (.setEnabled h true)))
 ```
-
-### Available protocols
-
-You can extend Secretary's protocols to your own data types and
-records if you need special functionality.
-
-- [`IRenderRoute`](#irenderroute)
-- [`IRouteMatches`](#iroutematches)
-
-#### `IRenderRoute`
-
-Most of the time the defaults will be good enough but on occasion you
-may need custom route rendering. To do this implement `IRenderRoute`
-for your type or record.
-
-```clojure
-(defrecord User [id]
-  secretary/IRenderRoute
-  (render-route [_]
-    (str "/users/" id))
-
-  (render-route [this params]
-    (str (secretary/render-route this) "?"
-         (secretary/encode-query-params params))))
-
-(secretary/render-route (User. 1))
-;; => "/users/1"
-(secretary/render-route (User. 1) {:action :delete})
-;; => "/users/1?action=delete"
-```
-
-#### `IRouteMatches`
-
-It is seldom you will ever need to create your own route matching
-implementation as the built in `String` and `RegExp` routes matchers
-should be fine for most applications. Still, if you have a suitable
-use case then this protocol is available. If your intention is to is
-to use it with `defroute` your implementation must return a map or
-vector.
 
 ## Contributors
 
