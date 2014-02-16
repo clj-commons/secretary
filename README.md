@@ -20,7 +20,7 @@ A client-side router for ClojureScript.
 Add secretary to your `project.clj` `:dependencies` vector:
 
 ```clojure
-[secretary "0.7.1"]
+[secretary "1.0.0"]
 ```
 
 ## Guide
@@ -236,7 +236,7 @@ vector.
 ### Example with `goog.History`
 
 ```clojure
-(ns app.routes
+(ns example
   (:require [secretary.core :as secretary :include-macros true :refer [defroute]]
             [goog.events :as events])
   (:import goog.History
@@ -245,12 +245,10 @@ vector.
 (def application
   (js/document.getElementById "application"))
 
-(def set-html! [el content]
+(defn set-html! [el content]
   (aset el "innerHTML" content))
 
-
 (secretary/set-config! :prefix "#")
-
 
 ;; /#/
 (defroute home-path "/" []
@@ -277,6 +275,8 @@ vector.
 (let [h (History.)]
   (goog.events/listen h EventType/NAVIGATE #(secretary/dispatch! (.-token %)))
   (doto h (.setEnabled h true)))
+
+(secretary/dispatch! "/")
 ```
 
 ## Contributors
