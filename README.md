@@ -2,6 +2,7 @@
 
 A client-side router for ClojureScript.
 
+
 ## Contents
 
 - [Installation](#installation)
@@ -15,6 +16,7 @@ A client-side router for ClojureScript.
 - [Available protocols](#available-protocols)
 - [Contributors](#contributors)
 
+
 ## Installation
 
 Add secretary to your `project.clj` `:dependencies` vector:
@@ -23,21 +25,23 @@ Add secretary to your `project.clj` `:dependencies` vector:
 [secretary "1.0.0"]
 ```
 
+
 ## Guide
 
-To get started `:require` secretary somewhere in your project. 
+To get started `:require` secretary somewhere in your project.
 
 ```clojure
 (ns app.routes
   (:require [secretary.core :as secretary :include-macros true :refer [defroute]]))
 ```
 
+
 ### Basic routing and dispatch
 
 Secretary is built around two main goals: creating route matchers
 and dispatching actions. Route matchers match and extract
 parameters from URI fragments and actions are functions which
-accept those parameters. 
+accept those parameters.
 
 `defroute` is Secretary's primary macro for defining a link between a
 route matcher and an action. The signature of this macro is
@@ -65,6 +69,7 @@ Before going in to more detail let's try to dispatch our route.
 With any luck, when we refresh the page and view the console we should
 see that `User: gf3` has been logged somewhere.
 
+
 #### Route matchers
 
 By default the route matcher may either be a string or regular
@@ -80,7 +85,7 @@ In the example above, the route matcher
 `"/users/:id"` successfully matched against `"/users/gf3"` and
 extracted `{:id "gf3}` as parameters. You can refer to the table below
 for more examples of route matchers and the parameters they return
-when matched successfully. 
+when matched successfully.
 
 Route matcher        | URI              | Parameters
 ---------------------|------------------|--------------------------
@@ -93,7 +98,8 @@ Route matcher        | URI              | Parameters
 `#"/[a-z]+/\d+"`     | `"/foo/123"`     | `["/foo/123"]`
 `#"/([a-z]+)/(\d+)"` | `"/foo/123"`     | `["foo" "123"]`
 
-#### Parameter destructuring 
+
+#### Parameter destructuring
 
 Now that we understand what happens during dispatch we can look at the
 `destruct` argument of `defroute`. This part is literally sugar
@@ -133,6 +139,7 @@ destructuring since they only ever return vectors.
   (js/console.log (str "User: " id)))
 ```
 
+
 #### Query parameters
 
 If a URI contains a query string it will automatically be extracted to
@@ -140,7 +147,7 @@ If a URI contains a query string it will automatically be extracted to
 regular expression matchers.
 
 ```clojure
-(defroute #"/users/:id" [id query-params] 
+(defroute #"/users/:id" [id query-params]
   (js/console.log (str "User: " id))
   (js/console.log (pr-str query-params)))
 
@@ -155,6 +162,7 @@ regular expression matchers.
 ;; "{:action \"delete\"}"
 ```
 
+
 #### Named routes
 
 While route matching and dispatch is by itself useful, it is often
@@ -163,7 +171,7 @@ a URI. By passing an optional name to `defroute` Secretary will
 define this function for you.
 
 ```clojure
-(defroute user-path "/users" []
+(defroute users-path "/users" []
   (js/console.log "Users path"))
 
 (defroute user-path "/users/:id" [id]
@@ -176,7 +184,7 @@ define this function for you.
 This also works with `:query-params`.
 
 ```clojure
-(users-path {:id 1 :query-params {:action "delete"}})
+(user-path {:id 1 :query-params {:action "delete"}})
 ;; => "/users/1?action=delete"
 ```
 
@@ -190,9 +198,10 @@ call
 to prefix gnerated URIs with a "#".
 
 ```clojure
-(users-path {:id 1)
+(user-path {:id 1})
 ;; => "#/users/1"
 ```
+
 
 ### Available protocols
 
@@ -201,6 +210,7 @@ records if you need special functionality.
 
 - [`IRenderRoute`](#irenderroute)
 - [`IRouteMatches`](#iroutematches)
+
 
 #### `IRenderRoute`
 
@@ -224,6 +234,7 @@ for your type or record.
 ;; => "/users/1?action=delete"
 ```
 
+
 #### `IRouteMatches`
 
 It is seldom you will ever need to create your own route matching
@@ -232,6 +243,7 @@ should be fine for most applications. Still, if you have a suitable
 use case then this protocol is available. If your intention is to is
 to use it with `defroute` your implementation must return a map or
 vector.
+
 
 ### Example with `goog.History`
 
@@ -255,7 +267,7 @@ vector.
   (set-html! application "<h1>OMG! YOU'RE HOME!</h1>"))
 
 ;; /#/users
-(defroute user-path "/users" []
+(defroute users-path "/users" []
   (set-html! application "<h1>USERS!</h1>"))
 
 ;; /#/users/:id
@@ -279,12 +291,14 @@ vector.
 (secretary/dispatch! "/")
 ```
 
+
 ## Contributors
 
 * [@gf3](https://github.com/gf3) (Gianni Chiappetta)
 * [@noprompt](https://github.com/noprompt) (Joel Holdbrooks)
 * [@joelash](https://github.com/joelash) (Joel Ash)
 * [@james-henderson](https://github.com/james-henderson) (James Henderson)
+
 
 ## License
 
