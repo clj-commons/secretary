@@ -43,7 +43,7 @@ route matcher and an action. The signature of this macro is
 `[name? route destruct & body]`. We will skip the `name?` part
 of the signature for now and return to it when we discuss
 [named routes](#named-routes). To get clearer picture of this
-looks let's define a route for users with an id.
+let's define a route for users with an id.
 
 ```clojure
 (defroute "/users/:id" {:as params}
@@ -97,15 +97,16 @@ Route matcher        | URI              | Parameters
 Now that we understand what happens during dispatch we can look at the
 `destruct` argument of `defroute`. This part is literally sugar
 around `let`. Basically whenever one of our route matches is
-successful and extracts parameters this is where we destructur
-them. Under the hood, with our users route, this looks something like
+successful and extracts parameters this is where we destructure
+them. Under the hood, for example with our users route, this looks
+something like the following.
 
 ```clojure
 (let [{:as params} {:id "gf3"}]
   ...)
 ```
 
-Given this, it should fairly easy to see that we could have have
+Given this, it should be fairly easy to see that we could have have
 written
 
 ```clojure
@@ -150,7 +151,7 @@ regular expression matchers.
 (secretary/dispach! "/users/10?action=delete")
 ;; ... will log
 ;; User: 10
-;; {action delete}
+;; "{:action \"delete\"}"
 ```
 
 #### Named routes
@@ -176,6 +177,20 @@ This also works with `:query-params`.
 ```clojure
 (users-path {:id 1 :query-params {:action "delete"}})
 ;; => "/users/1?action=delete"
+```
+
+If the browser you're targeting does not support HTML5 history you can
+call
+
+```clojure
+(secretary/set-config! :prefix "#")
+```
+
+to prefix gnerated URIs with a "#".
+
+```clojure
+(users-path {:id 1)
+;; => "#/users/1"
 ```
 
 ### Available protocols
