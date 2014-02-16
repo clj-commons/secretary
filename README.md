@@ -193,6 +193,53 @@ to prefix gnerated URIs with a "#".
 ;; => "#/users/1"
 ```
 
+
+### Example with history
+
+```clojure
+(ns app.routes
+  (:require [secretary.core :as secretary :include-macros true :refer [defroute]]
+            [goog.events :as events])
+  (:import goog.History
+           goog.history.EventType))
+
+(def application
+  (js/document.getElementById "application"))
+
+(def set-html! [el content]
+  (aset el "innerHTML" content))
+
+
+(secretary/set-config! :prefix "#")
+
+
+;; /#/
+(defroute home-path "/" []
+  (set-html! application "<h1>OMG! YOU'RE HOME!</h1>"))
+
+;; /#/users
+(defroute user-path "/users" []
+  (set-html! application "<h1>USERS!</h1>"))
+
+;; /#/users/:id
+(defroute user-path "/users/:id" [id]
+  (let [message (str "<h1>HELLO USER <small>" id "</small>!</h1>")]
+    (set-html! application message)))
+
+;; /#/777
+(defroute jackpot-path "/777" []
+  (set-html! application "<h1>YOU HIT THE JACKPOT!</h1>"))
+
+;; Catch all
+(defroute "*" []
+  (set-html! application "<h1>LOL! YOU LOST!</h1>"))
+
+(def history
+  (let [h (History.)]
+    (goog.events/listen h EventType/NAVIGATE #(secretary/dispatch! (.-token %)))
+    (doto h (.setEnabled h true))))
+```
+
 ### Available protocols
 
 You can extend Secretary's protocols to your own data types and
