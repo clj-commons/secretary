@@ -8,12 +8,14 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-2156"]]
   :plugins [[lein-cljsbuild "1.0.2"]
-            [com.cemerick/clojurescript.test "0.2.2"]]
+            [com.cemerick/clojurescript.test "0.2.3-SNAPSHOT"]]
   :hooks [leiningen.cljsbuild]
   :profiles {:dev {:plugins [[com.cemerick/austin "0.1.3"]]}}
-  :aliases {"run-tests" ["do" "clean," "cljsbuild" "test"]}
-  :cljsbuild {:builds [{:source-paths ["src/" "test/"]
+  :aliases {"run-tests" ["do" "clean," "cljsbuild" "once" "test"]
+            "auto-test" ["do" "clean," "cljsbuild" "auto" "test"]}
+  :cljsbuild {:builds [{:id "test"
+                        :source-paths ["src/" "test/"]
+                        :notify-command ["phantomjs" :cljs.test/runner "target/js/test.js"]
                         :compiler {:output-to "target/js/test.js"
                                    :optimizations :whitespace
-                                   :pretty-print true}}]
-              :test-commands {"unit-tests" ["phantomjs" :runner "target/js/test.js"]}})
+                                   :pretty-print true}}]})
