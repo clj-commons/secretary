@@ -1,4 +1,4 @@
-(defproject secretary "1.0.1-SNAPSHOT"
+(defproject secretary "1.0.1"
   :description "A client-side router for ClojureScript."
   :url "https://github.com/gf3/secretary"
   :license {:name "Eclipse Public License - v 1.0"
@@ -8,7 +8,7 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-2156"]]
   :plugins [[lein-cljsbuild "1.0.2"]]
-  :hooks [leiningen.cljsbuild]
+  ;:hooks [leiningen.cljsbuild]
   :profiles {:dev {:plugins [[com.cemerick/austin "0.1.3"]
                              [com.cemerick/clojurescript.test "0.2.3-SNAPSHOT"]]}}
   :aliases {"run-tests" ["do" "clean," "cljsbuild" "once" "test"]
