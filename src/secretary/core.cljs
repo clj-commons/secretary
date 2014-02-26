@@ -58,6 +58,13 @@
    {}
    (string/split query-string #"&")))
 
+(defn encode-uri
+  "Like js/encodeURIComponent excepts ignore slashes."
+  [uri]
+  (->> (string/split uri #"/")
+       (map encode)
+       (string/join "/")))
+
 ;;======================================================================
 ;; Route compilation
 
@@ -212,13 +219,16 @@
           a (atom m)
           path (.replace this (js/RegExp. ":[^\\s.:*/]+|\\*[^\\s.:*/]*" "g")
                          (fn [$1]
-                           (let [lookup (keyword (subs $1 1))
-                                 v (@a lookup)]
-                             (if (sequential? v)
-                               (do
-                                 (swap! a assoc lookup (next v))
-                                 (first v))
-                               (or v $1)))))
+                           (let [lookup (keyword (if (= $1 "*")
+                                                   $1
+                                                   (subs $1 1)))
+                                 v (@a lookup)
+                                 replacement (if (sequential? v)
+                                               (do
+                                                 (swap! a assoc lookup (next v))
+                                                 (encode-uri (first v)))
+                                               (if v (encode-uri v) $1))]
+                             replacement)))
           path (str (get-config [:prefix]) path)]
       (if-let [query-string (and query-params
                                  (encode-query-params query-params))]

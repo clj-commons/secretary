@@ -73,8 +73,16 @@
                                              :y "k/thx/bai"})
            "/lmao/rofl/gtfo/k/thx/bai"))
     (is (= (secretary/render-route "/*.:format" {:* "blood"
-                                                 :format "tarzan"})))
-    (is (= (secretary/render-route "/*.*" {:* ["stab" "wound"]}))))
+                                                 :format "tarzan"})
+           "/blood.tarzan"))
+    (is (= (secretary/render-route "/*.*" {:* ["stab" "wound"]})
+           "/stab.wound")))
+
+  (testing "it encodes replacements"
+    (is (= (secretary/render-route "/users/:path" {:path "yay/for/me"}))
+        "/users/yay/for/me")
+    (is (= (secretary/render-route "/users/:email" {:email "fake@example.com"}))
+        "/users/fake%40example.com"))
 
   (testing "it adds prefixes"
     (binding [secretary/*config* (atom {:prefix "#"})]
