@@ -21,7 +21,15 @@
 
 (deftest route-matches-test 
   (testing "non-encoded-routes"
-    (is (secretary/route-matches "/foo bar baz" "/foo%20bar%20baz")))
+    (is (not (secretary/route-matches "/foo bar baz" "/foo%20bar%20baz")))
+    (is (not (secretary/route-matches "/:x" "/,")))
+    (is (not (secretary/route-matches "/:x" "/;")))
+
+    (is (= (secretary/route-matches "/:x" "/%2C")
+           {:x ","}))
+
+    (is (= (secretary/route-matches "/:x" "/%3B")
+           {:x ";"})))
 
   (testing "utf-8 routes"
     (is (= (secretary/route-matches "/:x" "/%E3%81%8A%E3%81%AF%E3%82%88%E3%81%86")

@@ -130,7 +130,7 @@
                       [r p]))]
                  [#"^\:([^\s.:*/]+)" ;; Params
                   (fn [v]
-                    (let [r "([^,;/]+)"
+                    (let [r "([^,;?/]+)"
                           p (keyword v)]
                       [r p]))]
                  [#"^([^:*]+)" ;; Literals 
@@ -140,8 +140,8 @@
        [re params] (lex-route route clauses)]
    (reify IRouteMatches
      (route-matches [_ route]
-       (when-let [[_ & ms] (re-matches* re (decode route))]
-         (->> (interleave params ms)
+       (when-let [[_ & ms] (re-matches* re route)]
+         (->> (interleave params (map decode ms))
               (partition 2)
               (merge-with vector {})))))))
 
@@ -202,7 +202,7 @@
 (extend-protocol IRouteMatches
   string
   (route-matches [this route]
-    (route-matches (compile-route this) (decode route)))
+    (route-matches (compile-route this) route))
 
   js/RegExp
   (route-matches [this route]
