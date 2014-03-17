@@ -32,10 +32,9 @@
     (swap! *config* assoc-in path val)))
 
 ;;----------------------------------------------------------------------
-;; Parameter encoding/decoding
+;; Parameter encoding
 
 (def encode js/encodeURIComponent)
-(def decode js/decodeURIComponent)
 
 (defmulti ^:private encode-pair
   (fn [[k v]]
@@ -69,6 +68,23 @@
 
 (defmethod encode-pair :default [[k v]]
   (str (name k) \= (encode (str v))))
+
+(defn encode-query-params
+  "Convert a map of query parameters into url encoded string."
+  [query-params]
+  (string/join \& (map encode-pair query-params)))
+
+(defn encode-uri
+  "Like js/encodeURIComponent excepts ignore slashes."
+  [uri]
+  (->> (string/split uri #"/")
+       (map encode)
+       (string/join "/")))
+
+;;----------------------------------------------------------------------
+;; Parameter decoding
+
+(def decode js/decodeURIComponent)
 
 (defn- parse-path [path]
   (let [index-re #"\[([^\]]*)\]*" ;; Parse out the index value
@@ -125,11 +141,6 @@
       (update-in m (butlast path) conj v)
       (assoc-in m path v))))
 
-(defn encode-query-params
-  "Turns a map of query parameters into url encoded string."
-  [query-params]
-  (string/join \& (map encode-pair query-params)))
-
 (defn decode-query-params
   "Extract a map of query parameters from a query string."
   [query-string]
@@ -140,13 +151,6 @@
          (assoc-in-query-params m (key-parse k) (decode v))))
      {}
      parts)))
-
-(defn encode-uri
-  "Like js/encodeURIComponent excepts ignore slashes."
-  [uri]
-  (->> (string/split uri #"/")
-       (map encode)
-       (string/join "/")))
 
 ;;----------------------------------------------------------------------
 ;; Route compilation
