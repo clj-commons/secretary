@@ -287,8 +287,6 @@ vector.
 (let [h (History.)]
   (goog.events/listen h EventType/NAVIGATE #(secretary/dispatch! (.-token %)))
   (doto h (.setEnabled true)))
-
-(secretary/dispatch! "/")
 ```
 
 
