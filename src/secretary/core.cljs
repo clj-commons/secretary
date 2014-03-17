@@ -95,7 +95,7 @@
         parsed-path (parse-path (str path))]
     (cons key parsed-path)))
 
-(defn assoc-in-query-params
+(defn- assoc-in-query-params
   "Like assoc-in but numbers in path create vectors instead of maps.
 
   Ex.
