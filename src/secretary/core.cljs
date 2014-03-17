@@ -1,7 +1,8 @@
 (ns secretary.core
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string]
+            [cljs.reader :refer [read-string]]))
 
-;;======================================================================
+;;----------------------------------------------------------------------
 ;; Protocols
 
 (defprotocol IRouteMatches
@@ -12,7 +13,7 @@
     [this]
     [this params]))
 
-;;======================================================================
+;;----------------------------------------------------------------------
 ;; Configuration
 
 (def ^:dynamic *config*
@@ -30,33 +31,115 @@
   (let [path (if (sequential? path) path [path])]
     (swap! *config* assoc-in path val)))
 
-;;======================================================================
+;;----------------------------------------------------------------------
 ;; Parameter encoding/decoding
 
 (def encode js/encodeURIComponent)
 (def decode js/decodeURIComponent)
 
+(defmulti ^:private encode-pair
+  (fn [[k v]]
+    (cond
+     (or (sequential? v) (set? v))
+     ::sequential
+     (or (map? v) (satisfies? IRecord v))
+     ::map)))
+
+(defn- key-index
+  ([k] (str (name k) "[]"))
+  ([k index]
+     (str (name k) "[" index "]")))
+
+(defmethod encode-pair ::sequential [[k v]]
+  (let [encoded (map-indexed
+                 (fn [i x]
+                   (let [pair (if (coll? x)
+                                [(key-index k i) x]
+                                [(key-index k) x])]
+                     (encode-pair pair)))
+                 v)]
+    (string/join \& encoded)))
+
+(defmethod encode-pair ::map [[k v]]
+  (let [encoded (map
+                 (fn [[ik iv]]
+                   (encode-pair [(key-index k (name ik)) iv]))
+                 v)]
+    (string/join \& encoded)))
+
+(defmethod encode-pair :default [[k v]]
+  (str (name k) \= (encode (str v))))
+
+(defn- parse-path [path]
+  (let [index-re #"\[([^\]]*)\]*" ;; Parse out the index value
+        parts (re-seq index-re path)]
+    (map
+     (fn [[_ part]]
+       (cond
+        (empty? part) 0
+        (re-matches #"\d+" part) (read-string part)
+        :else part))
+     parts)))
+
+(defn- key-parse
+  "Return a key path for a serialized query-string entry.
+
+  Ex.
+
+    (key-parse \"foo[][a][][b]\")
+    ;; => (\"foo\" 0 \"a\" 0 \"b\")
+  "
+  [k]
+  (let [re #"([^\[\]]+)((?:\[[^\]]*\])*)?"
+        [_ key path] (re-matches re k)
+        parsed-path (parse-path (str path))]
+    (cons key parsed-path)))
+
+(defn assoc-in-query-params
+  "Like assoc-in but numbers in path create vectors instead of maps.
+
+  Ex.
+
+    (assoc-in* {} [\"foo\" 0] 1)
+    ;; => {\"foo\" [1]}
+
+    (assoc-in* {} [\"foo\" 0 \"a\"] 1)
+    ;; => {\"foo\" [{\"a\" 1}]}
+  "
+  [m path v]
+  (let [heads (fn [xs]
+                (map-indexed
+                 (fn [i _]
+                   (take (inc i) xs))
+                 xs))
+        hs (heads path)
+        m (reduce
+           (fn [m h]
+             (if (and (or (number? (last h)))
+                      (not (vector? (get-in m (butlast h)))))
+               (assoc-in m (butlast h) [])
+               m))
+           m
+           hs)]
+    (if (zero? (last path))
+      (update-in m (butlast path) conj v)
+      (assoc-in m path v))))
+
 (defn encode-query-params
   "Turns a map of query parameters into url encoded string."
   [query-params]
-  (->> (map
-        (fn [[k v]]
-          (str (name k) "=" (encode (if (keyword? v)
-                                      (name v)
-                                      (str v)))))
-        query-params)
-       (string/join "&")))
+  (string/join \& (map encode-pair query-params)))
 
 (defn decode-query-params
   "Extract a map of query parameters from a query string."
   [query-string]
-  (reduce
-   (fn [m param]
-     (let [[k v] (string/split param #"=" 2)
-           v (decode v)]
-       (assoc m k v)))
-   {}
-   (string/split query-string #"&")))
+  (let [parts (string/split query-string #"&")]
+    (reduce
+     (fn [m part]
+       (let [[k v] (string/split part #"=" 2)]
+         (assoc-in-query-params m (key-parse k) (decode v))))
+     {}
+     parts)))
 
 (defn encode-uri
   "Like js/encodeURIComponent excepts ignore slashes."
@@ -65,7 +148,7 @@
        (map encode)
        (string/join "/")))
 
-;;======================================================================
+;;----------------------------------------------------------------------
 ;; Route compilation
 
 ;; The implementation for route compilation was inspired by Clout and
@@ -133,7 +216,7 @@
                     (let [r "([^,;?/]+)"
                           p (keyword v)]
                       [r p]))]
-                 [#"^([^:*]+)" ;; Literals 
+                 [#"^([^:*]+)" ;; Literals
                   (fn [v]
                     (let [r (re-escape v)]
                       [r]))]]
@@ -145,14 +228,14 @@
               (partition 2)
               (merge-with vector {})))))))
 
-;;======================================================================
+;;----------------------------------------------------------------------
 ;; Route rendering
 
 (defn ^:internal render-route* [obj & args]
   (when (satisfies? IRenderRoute obj)
     (apply render-route obj args)))
 
-;;======================================================================
+;;----------------------------------------------------------------------
 ;; Routes adding/removing
 
 (def ^:dynamic *routes*
@@ -175,7 +258,7 @@
 (defn reset-routes! []
   (reset! *routes* []))
 
-;;======================================================================
+;;----------------------------------------------------------------------
 ;; Route lookup and dispatch
 
 (defn- locate-route [route]
@@ -196,8 +279,8 @@
         params (merge params query-params)]
     (action params)))
 
-;;======================================================================
-;; Protocol implementations 
+;;----------------------------------------------------------------------
+;; Protocol implementations
 
 (extend-protocol IRouteMatches
   string
