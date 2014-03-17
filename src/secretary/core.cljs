@@ -261,7 +261,7 @@
 ;;----------------------------------------------------------------------
 ;; Route lookup and dispatch
 
-(defn- locate-route [route]
+(defn locate-route [route]
   (some
    (fn [[compiled-route action]]
      (when-let [params (route-matches compiled-route route)]
