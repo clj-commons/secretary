@@ -1,6 +1,5 @@
 (ns secretary.core
-  (:require [clojure.string :as string]
-            [cljs.reader :refer [read-string]]))
+  (:require [clojure.string :as string]))
 
 ;;----------------------------------------------------------------------
 ;; Protocols
@@ -36,7 +35,10 @@
 
 (def encode js/encodeURIComponent)
 
-(defmulti ^:private encode-pair
+(defmulti
+  ^{:private true
+    :doc "Given a key and a value return and encoded key-value pair."}
+  encode-pair
   (fn [[k v]]
     (cond
      (or (sequential? v) (set? v))
@@ -86,14 +88,18 @@
 
 (def decode js/decodeURIComponent)
 
-(defn- parse-path [path]
-  (let [index-re #"\[([^\]]*)\]*" ;; Parse out the index value
+(defn- parse-path
+  "Parse a value from a serialized query-string key index. If the
+  index value is empty 0 is returned, if it's a digit it returns the
+  js/parseInt value, otherwise it returns the extracted index."
+  [path]
+  (let [index-re #"\[([^\]]*)\]*" ;; Capture the index value.
         parts (re-seq index-re path)]
     (map
      (fn [[_ part]]
        (cond
         (empty? part) 0
-        (re-matches #"\d+" part) (read-string part)
+        (re-matches #"\d+" part) (js/parseInt part)
         :else part))
      parts)))
 
@@ -108,7 +114,7 @@
   [k]
   (let [re #"([^\[\]]+)((?:\[[^\]]*\])*)?"
         [_ key path] (re-matches re k)
-        parsed-path (parse-path (str path))]
+        parsed-path (when path (parse-path path))]
     (cons key parsed-path)))
 
 (defn- assoc-in-query-params
@@ -116,10 +122,10 @@
 
   Ex.
 
-    (assoc-in* {} [\"foo\" 0] 1)
+    (assoc-in-query-params {} [\"foo\" 0] 1)
     ;; => {\"foo\" [1]}
 
-    (assoc-in* {} [\"foo\" 0 \"a\"] 1)
+    (assoc-in-query-params {} [\"foo\" 0 \"a\"] 1)
     ;; => {\"foo\" [{\"a\" 1}]}
   "
   [m path v]
@@ -147,6 +153,8 @@
   (let [parts (string/split query-string #"&")]
     (reduce
      (fn [m part]
+       ;; We only want two parts since the part on the right hand side
+       ;; could potentially contain an =.
        (let [[k v] (string/split part #"=" 2)]
          (assoc-in-query-params m (key-parse k) (decode v))))
      {}
