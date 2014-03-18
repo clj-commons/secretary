@@ -5,6 +5,7 @@
 ;; Protocols
 
 (defprotocol IRouteMatches
+  (route-spec [this route])
   (route-matches [this route]))
 
 (defprotocol IRenderRoute
@@ -215,7 +216,7 @@
 
 (defn- compile-route
   "Given a route return an instance of IRouteMatches."
-  [route]
+  [route-spec]
   (let [clauses [[#"^\*([^\s.:*/]*)" ;; Splats, named splates
                   (fn [v]
                     (let [r "(.*?)"
@@ -232,8 +233,11 @@
                   (fn [v]
                     (let [r (re-escape v)]
                       [r]))]]
-       [re params] (lex-route route clauses)]
+       [re params] (lex-route route-spec clauses)]
    (reify IRouteMatches
+     (route-spec [_ route]
+       (when-let [[_ & ms] (re-matches* re route)]
+         route-spec))
      (route-matches [_ route]
        (when-let [[_ & ms] (re-matches* re route)]
          (->> (interleave params (map decode ms))
@@ -277,7 +281,7 @@
   (some
    (fn [[compiled-route action]]
      (when-let [params (route-matches compiled-route route)]
-       [action (route-matches compiled-route route)]))
+       [action (route-matches compiled-route route) (route-spec compiled-route route)]))
    @*routes*))
 
 (defn dispatch!
@@ -286,7 +290,7 @@
   (let [[uri-path query-string] (string/split uri #"\?")
         query-params (when query-string
                        {:query-params (decode-query-params query-string)})
-        [action params] (locate-route uri-path)
+        [action params _] (locate-route uri-path)
         action (or action identity)
         params (merge params query-params)]
     (action params)))
@@ -300,6 +304,9 @@
     (route-matches (compile-route this) route))
 
   js/RegExp
+  (route-spec [this route]
+    (when-let [[_ & ms] (re-matches* this route)]
+      this))
   (route-matches [this route]
     (when-let [[_ & ms] (re-matches* this route)]
       (vec ms))))
