@@ -216,7 +216,7 @@
 
 (defn- compile-route
   "Given a route return an instance of IRouteMatches."
-  [route-spec]
+  [orig-route]
   (let [clauses [[#"^\*([^\s.:*/]*)" ;; Splats, named splates
                   (fn [v]
                     (let [r "(.*?)"
@@ -233,11 +233,11 @@
                   (fn [v]
                     (let [r (re-escape v)]
                       [r]))]]
-       [re params] (lex-route route-spec clauses)]
+       [re params] (lex-route orig-route clauses)]
    (reify IRouteMatches
      (route-spec [_ route]
        (when-let [[_ & ms] (re-matches* re route)]
-         route-spec))
+         orig-route))
      (route-matches [_ route]
        (when-let [[_ & ms] (re-matches* re route)]
          (->> (interleave params (map decode ms))
