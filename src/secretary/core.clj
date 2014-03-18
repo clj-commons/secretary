@@ -13,8 +13,8 @@
                   (concat (list 'defn fn-name) fn-spec)
                   (cons 'fn fn-spec))]
 
-    (when-not (or (map? destruct) (vector? destruct))
-      (throw (Exception. (str "defroute bindings must be a map or vector, given " (pr-str destruct)))))
+    (when-not ((some-fn map? vector?) destruct)
+      (throw (IllegalArgumentException. (str "defroute bindings must be a map or vector, given " (pr-str destruct)))))
 
     `(let [action# (fn [params#]
                      (cond
