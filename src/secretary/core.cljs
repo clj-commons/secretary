@@ -1,5 +1,6 @@
 (ns secretary.core
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string]
+            [clojure.walk :refer [keywordize-keys]]))
 
 ;;----------------------------------------------------------------------
 ;; Protocols
@@ -150,15 +151,17 @@
 (defn decode-query-params
   "Extract a map of query parameters from a query string."
   [query-string]
-  (let [parts (string/split query-string #"&")]
-    (reduce
-     (fn [m part]
-       ;; We only want two parts since the part on the right hand side
-       ;; could potentially contain an =.
-       (let [[k v] (string/split part #"=" 2)]
-         (assoc-in-query-params m (key-parse k) (decode v))))
-     {}
-     parts)))
+  (let [parts (string/split query-string #"&")
+        params (reduce
+                (fn [m part]
+                  ;; We only want two parts since the part on the right hand side
+                  ;; could potentially contain an =.
+                  (let [[k v] (string/split part #"=" 2)]
+                    (assoc-in-query-params m (key-parse k) (decode v))))
+                {}
+                parts)
+        params (keywordize-keys params)]
+    params))
 
 ;;----------------------------------------------------------------------
 ;; Route compilation

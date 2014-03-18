@@ -6,7 +6,7 @@
 
 (deftest query-params-test
   (testing "encodes query params"
-    (let [params {"id" "kevin" "food" "bacon"}
+    (let [params {:id "kevin" :food "bacon"}
           encoded (secretary/encode-query-params params)]
       (is (= (secretary/decode-query-params encoded)
              params)))
@@ -24,9 +24,9 @@
       (is (re-find #"food=bacon" query-string)))
 
     (are [x y] (= (secretary/decode-query-params x) y)
-      "x[]=1&x[]=2" {"x" ["1" "2"]}
-      "a[0][b]=1&a[1][b]=2" {"a" [{"b" "1"} {"b" "2"}]}
-      "a[0][b][]=1&a[0][b][]=2&a[1][b][]=3&a[1][b][]=4" {"a" [{"b" ["1" "2"]} {"b" ["3" "4"]}]})))
+      "x[]=1&x[]=2" {:x ["1" "2"]}
+      "a[0][b]=1&a[1][b]=2" {:a [{:b "1"} {:b "2"}]}
+      "a[0][b][]=1&a[0][b][]=2&a[1][b][]=3&a[1][b][]=4" {:a [{:b ["1" "2"]} {:b ["3" "4"]}]})))
 
 (deftest route-matches-test 
   (testing "non-encoded-routes"
@@ -147,7 +147,7 @@
                  "foo=" (js/encodeURIComponent p1)
                  "&bar=" (js/encodeURIComponent p2))]
       (is (= (secretary/dispatch! r)
-             {"foo" p1 "bar" p2})))
+             {:foo p1 :bar p2})))
 
     (defroute #"/([a-z]+)/search" [letters {:keys [query-params]}]
       [letters query-params])
@@ -156,7 +156,7 @@
            ["abc" nil]))
 
     (is (= (secretary/dispatch! "/abc/search?flavor=pineapple&walnuts=true")
-           ["abc" {"flavor" "pineapple" "walnuts" "true"}])))
+           ["abc" {:flavor "pineapple" :walnuts "true"}])))
 
   (testing "dispatch! with regex routes"
     (secretary/reset-routes!)
