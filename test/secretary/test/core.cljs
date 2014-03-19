@@ -179,3 +179,14 @@
     (let [url (search-path {:query-params {:burritos 10, :tacos 200}})]
       (is (re-find #"burritos=10" url))
       (is (re-find #"tacos=200" url)))))
+
+(deftest locate-route
+  (testing "locate-route includes original route as last value in return vector"
+    (secretary/reset-routes!)
+
+    (defroute "/my-route/:some-param" [params])
+    (defroute #"my-regexp-route-[a-zA-Z]*" [params])
+
+    (is (= "/my-route/:some-param" (secretary/locate-route-value "/my-route/100")))
+    (is (= (.-source #"my-regexp-route-[a-zA-Z]*")
+           (.-source (secretary/locate-route-value "my-regexp-route-test"))))))
