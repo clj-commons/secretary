@@ -22,7 +22,7 @@ A client-side router for ClojureScript.
 Add secretary to your `project.clj` `:dependencies` vector:
 
 ```clojure
-[secretary "1.0.4"]
+[secretary "1.1.0"]
 ```
 
 
