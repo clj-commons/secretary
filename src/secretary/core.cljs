@@ -5,8 +5,10 @@
 ;; Protocols
 
 (defprotocol IRouteMatches
-  (route-spec [this route])
   (route-matches [this route]))
+
+(defprotocol IRouteValue
+  (route-value [this]))
 
 (defprotocol IRenderRoute
   (render-route
@@ -234,10 +236,11 @@
                     (let [r (re-escape v)]
                       [r]))]]
        [re params] (lex-route orig-route clauses)]
-   (reify IRouteMatches
-     (route-spec [_ route]
-       (when-let [[_ & ms] (re-matches* re route)]
-         orig-route))
+   (reify
+     IRouteValue
+     (route-value [this] orig-route)
+
+     IRouteMatches
      (route-matches [_ route]
        (when-let [[_ & ms] (re-matches* re route)]
          (->> (interleave params (map decode ms))
@@ -281,8 +284,13 @@
   (some
    (fn [[compiled-route action]]
      (when-let [params (route-matches compiled-route route)]
-       [action (route-matches compiled-route route) (route-spec compiled-route route)]))
+       {:action action :params params :route compiled-route}))
    @*routes*))
+
+(defn locate-route-value
+  "Returns original route value as set in defroute when passed a URI path."
+  [uri]
+  (-> uri locate-route :route route-value))
 
 (defn dispatch!
   "Dispatch an action for a given route if it matches the URI path."
@@ -290,7 +298,7 @@
   (let [[uri-path query-string] (string/split uri #"\?")
         query-params (when query-string
                        {:query-params (decode-query-params query-string)})
-        [action params _] (locate-route uri-path)
+        {:keys [action params]} (locate-route uri-path)
         action (or action identity)
         params (merge params query-params)]
     (action params)))
@@ -304,12 +312,17 @@
     (route-matches (compile-route this) route))
 
   js/RegExp
-  (route-spec [this route]
-    (when-let [[_ & ms] (re-matches* this route)]
-      this))
   (route-matches [this route]
     (when-let [[_ & ms] (re-matches* this route)]
       (vec ms))))
+
+(extend-protocol IRouteValue
+  string
+  (route-value [this]
+    (route-value (compile-route this)))
+
+  js/RegExp
+  (route-value [this] this))
 
 (extend-protocol IRenderRoute
   string

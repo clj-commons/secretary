@@ -187,10 +187,6 @@
     (defroute "/my-route/:some-param" [params])
     (defroute #"my-regexp-route-[a-zA-Z]*" [params])
 
-    (is (= "/my-route/:some-param"
-           (last (secretary/locate-route "/my-route/100"))))
-
-    ;; I compare with pr-str as I can't get equality with RegExps
-    (is (= (pr-str #"my-regexp-route-[a-zA-Z]*")
-           (pr-str (last (secretary/locate-route "my-regexp-route-test")))))
-    (is (= js/RegExp (type (last (secretary/locate-route "my-regexp-route-test")))))))
+    (is (= "/my-route/:some-param" (secretary/locate-route-value "/my-route/100")))
+    (is (= (.-source #"my-regexp-route-[a-zA-Z]*")
+           (.-source (secretary/locate-route-value "my-regexp-route-test"))))))
