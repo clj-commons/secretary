@@ -263,48 +263,91 @@
 (def ^:dynamic *routes*
   (atom []))
 
-(defn add-route! [obj action]
-  (let [obj (if (string? obj)
-              (compile-route obj)
-              obj)]
-    (swap! *routes* conj [obj action])))
+(defn add-route!
+  ([obj action]
+     (swap! *routes* add-route! obj action))
+  ([routes obj action]
+     (let [obj (if (string? obj)
+                 (compile-route obj)
+                 obj)]
+       (conj routes [obj action]))))
 
-(defn remove-route! [obj]
-  (swap! *routes*
-         (fn [rs]
-           (filterv
-            (fn [[x _]]
-              (not= x obj))
-            rs))))
+(defn remove-route!
+  ([obj]
+     (swap! *routes* remove-route! obj))
+  ([routes obj]
+     (filterv
+      (fn [[x _]]
+        (not= x obj))
+      routes)))
 
-(defn reset-routes! []
-  (reset! *routes* []))
+(defn reset-routes!
+  ([]
+     (reset! *routes* []))
+  ([routes]
+     []))
 
 ;;----------------------------------------------------------------------
 ;; Route lookup and dispatch
+;; Route lookup
 
-(defn locate-route [route]
-  (some
-   (fn [[compiled-route action]]
-     (when-let [params (route-matches compiled-route route)]
-       {:action action :params params :route compiled-route}))
-   @*routes*))
+(defn locate-route
+  ([route]
+     (locate-route @*routes* route))
+  ([routes route]
+     (some
+      (fn [[compiled-route action]]
+        (when-let [params (route-matches compiled-route route)]
+          {:action action :params params :route compiled-route}))
+      routes)))
 
 (defn locate-route-value
   "Returns original route value as set in defroute when passed a URI path."
   [uri]
   (-> uri locate-route :route route-value))
 
+
+(deftype Routes [routes]
+  IFn
+  (-invoke [this route]
+    (get this route))
+
+  ISeqable
+  (-seq [this]
+    routes)
+
+  ICollection
+  (-conj [this [route action]]
+    (Routes. (add-route! routes route action)))
+
+  IAssociative
+  (-assoc [this route action]
+    (Routes. (add-route! routes route action)))
+
+  IRouteMatches
+
+  ILookup
+  (-lookup [this route]
+    (locate-route routes route))
+  (-lookup [this route not-found]
+    (or (locate-route routes route) not-found)))
+
+
+
 (defn dispatch!
   "Dispatch an action for a given route if it matches the URI path."
-  [uri]
-  (let [[uri-path query-string] (string/split uri #"\?")
-        query-params (when query-string
-                       {:query-params (decode-query-params query-string)})
-        {:keys [action params]} (locate-route uri-path)
-        action (or action identity)
-        params (merge params query-params)]
-    (action params)))
+  ([uri]
+     (dispatch! @*routes* uri))
+  ([routes uri]
+     (let [[uri-path query-string] (string/split uri #"\?")
+           query-params (when query-string
+                          {:query-params (decode-query-params query-string)})
+           {:keys [action params]} (if (instance? Routes routes)
+                                     (get routes uri-path)
+                                     (locate-route routes uri-path))
+           action (or action identity)
+           params (merge params query-params)]
+       (action params))))
 
 ;;----------------------------------------------------------------------
 ;; Protocol implementations

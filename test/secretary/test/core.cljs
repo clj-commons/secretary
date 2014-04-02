@@ -1,8 +1,26 @@
 (ns secretary.test.core
   (:require [cemerick.cljs.test]
-            [secretary.core :as secretary :include-macros true :refer [defroute]])
+            [secretary.core :as secretary :include-macros true :refer [defroute defroutes ROUTE]])
   (:require-macros [cemerick.cljs.test :refer [deftest is are testing]]))
 
+(deftest defroutes-test
+  (defroutes bat-routes
+    (ROUTE bat-path "bat/:sex" [sex] sex))
+
+  (defroutes shake-routes
+    (ROUTE show-shake-path "shake/:kind" [kind] kind)
+    (ROUTE edit-shake-path "shake/:kind/edit" [kind] kind)
+    bat-routes)
+
+  (are [x y z] (= (secretary/dispatch! x y) z)
+    shake-routes "shake/spear" "spear"
+    shake-routes "shake/weight/edit" "weight"
+    shake-routes "bat/woman" "woman")
+
+  (are [x y] (= x y)
+    (bat-path {:sex "man"}) "bat/man"
+    (show-shake-path {:kind "bait"}) "shake/bait"
+    (edit-shake-path {:kind "fate"}) "shake/fate/edit"))
 
 (deftest query-params-test
   (testing "encodes query params"
