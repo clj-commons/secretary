@@ -250,9 +250,9 @@ vector.
 ```clojure
 (ns example
   (:require [secretary.core :as secretary :include-macros true :refer [defroute]]
-            [goog.events :as events])
-  (:import goog.History
-           goog.history.EventType))
+            [goog.events :as events]
+            [goog.history.EventType :as EventType])
+  (:import goog.History))
 
 (def application
   (js/document.getElementById "application"))
