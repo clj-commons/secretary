@@ -340,7 +340,7 @@
                            (let [lookup (keyword (if (= $1 "*")
                                                    $1
                                                    (subs $1 1)))
-                                 v (@a lookup)
+                                 v (get @a lookup)
                                  replacement (if (sequential? v)
                                                (do
                                                  (swap! a assoc lookup (next v))
