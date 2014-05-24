@@ -296,6 +296,8 @@ vector.
 * [@noprompt](https://github.com/noprompt) (Joel Holdbrooks)
 * [@joelash](https://github.com/joelash) (Joel Ash)
 * [@james-henderson](https://github.com/james-henderson) (James Henderson)
+* [@the-kenny](https://github.com/the-kenny) (Moritz Ulrich)
+* [@timgilbert](https://github.com/timgilbert) (Tim Gilbert)
 
 
 ## License
