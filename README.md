@@ -300,6 +300,7 @@ vector.
 * [@james-henderson](https://github.com/james-henderson) (James Henderson)
 * [@the-kenny](https://github.com/the-kenny) (Moritz Ulrich)
 * [@timgilbert](https://github.com/timgilbert) (Tim Gilbert)
+* [@bbbates](https://github.come/bbbates) (Brendan)
 
 
 ## License
