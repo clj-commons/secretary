@@ -295,10 +295,20 @@
   [uri]
   (-> uri locate-route :route route-value))
 
+(defn- has-prefix?
+  []
+  (not (string/blank? (get-config [:prefix]))))
+
+(defn- uri-without-prefix
+  [uri]
+  (if has-prefix?
+    (string/replace uri (re-pattern (str "^" (get-config [:prefix]))) "")
+    uri))
+
 (defn dispatch!
   "Dispatch an action for a given route if it matches the URI path."
   [uri]
-  (let [[uri-path query-string] (string/split uri #"\?")
+  (let [[uri-path query-string] (string/split (uri-without-prefix uri) #"\?")
         query-params (when query-string
                        {:query-params (decode-query-params query-string)})
         {:keys [action params]} (locate-route uri-path)
