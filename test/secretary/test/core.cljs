@@ -28,7 +28,7 @@
       "a[0][b]=1&a[1][b]=2" {:a [{:b "1"} {:b "2"}]}
       "a[0][b][]=1&a[0][b][]=2&a[1][b][]=3&a[1][b][]=4" {:a [{:b ["1" "2"]} {:b ["3" "4"]}]})))
 
-(deftest route-matches-test 
+(deftest route-matches-test
   (testing "non-encoded-routes"
     (is (not (secretary/route-matches "/foo bar baz" "/foo%20bar%20baz")))
     (is (not (secretary/route-matches "/:x" "/,")))
@@ -105,7 +105,7 @@
     (binding [secretary/*config* (atom {:prefix "#"})]
       (is (= (secretary/render-route "/users/:id" {:id 1})
              "#/users/1"))))
-  
+
   (testing "it leaves param in string if not in map"
     (is (= (secretary/render-route "/users/:id" {})
            "/users/:id"))))
@@ -164,6 +164,21 @@
 
     (is (= (secretary/dispatch! "/xyz/123")
            ["xyz" "123"])))
+
+  (testing "dispatch! with named-routes and configured prefix"
+    (secretary/reset-routes!)
+
+    (binding [secretary/*config* (atom {:prefix "#"})]
+      (defroute root-route "/" [] "BAM!")
+      (defroute users-route "/users" [] "ZAP!")
+      (defroute user-route "/users/:id" {:as params} params)
+
+      (is (= (secretary/dispatch! (root-route))
+             "BAM!"))
+      (is (= (secretary/dispatch! (users-route))
+             "ZAP!"))
+      (is (= (secretary/dispatch! (user-route {:id "2"}))
+           {:id "2"}))))
 
   (testing "named routes"
     (secretary/reset-routes!)
