@@ -295,15 +295,13 @@
   [uri]
   (-> uri locate-route :route route-value))
 
-(defn- has-prefix?
+(defn- prefix
   []
-  (not (string/blank? (get-config [:prefix]))))
+  (str (get-config [:prefix])))
 
 (defn- uri-without-prefix
   [uri]
-  (if has-prefix?
-    (string/replace uri (re-pattern (str "^" (get-config [:prefix]))) "")
-    uri))
+  (string/replace uri (re-pattern (str "^" (prefix))) ""))
 
 (defn dispatch!
   "Dispatch an action for a given route if it matches the URI path."
