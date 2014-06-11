@@ -93,7 +93,7 @@ Route matcher        | URI              | Parameters
 ---------------------|------------------|--------------------------
 `"/:x/:y"`           | `"/foo/bar"`     | `{:x "foo" :y "bar"}`
 `"/:x/:x"`           | `"/foo/bar"`     | `{:x ["foo" "bar"]}`
-`"/files/*.:format`  | `"/files/x.zip"` | `{:* "x" :format "zip"}`
+`"/files/*.:format"`  | `"/files/x.zip"` | `{:* "x" :format "zip"}`
 `"*"`                | `"/any/thing"`   | `{:* "/any/thing"}`
 `"/*/*"`             | `"/n/e/thing"`   | `{:* ["n" "e/thing"]}`
 `"/*x/*y"`           | `"/n/e/thing"`   | `{:x "n" :y "e/thing"}`
@@ -149,7 +149,7 @@ If a URI contains a query string it will automatically be extracted to
 regular expression matchers.
 
 ```clojure
-(defroute #"/users/:id" [id query-params]
+(defroute "/users/:id" [id query-params]
   (js/console.log (str "User: " id))
   (js/console.log (pr-str query-params)))
 
