@@ -314,10 +314,16 @@
         params (merge params query-params)]
     (action params)))
 
+(defn invalid-params [params validations]
+  (reduce (fn [m [key validation]]
+            (let [value (get params key)]
+              (if (re-matches validation value)
+                m
+                (assoc m key [value validation]))))
+          {} (partition 2 validations)))
+
 (defn- params-valid? [params validations]
-  (every?
-   (fn [[key validation]] (re-matches validation (get params key)))
-   (partition 2 validations)))
+  (empty? (invalid-params params validations)))
 
 ;;----------------------------------------------------------------------
 ;; Protocol implementations
@@ -334,9 +340,9 @@
 
   cljs.core/PersistentVector
   (route-matches [[route-string & validations] route]
-    (let [values (route-matches (compile-route route-string) route)]
-      (when (params-valid? values validations)
-        values))))
+    (let [params (route-matches (compile-route route-string) route)]
+      (when (params-valid? params validations)
+        params))))
 
 (extend-protocol IRouteValue
   string
@@ -381,6 +387,7 @@
     (render-route this {}))
 
   (render-route [[route-string & validations] params]
-    (if (params-valid? params validations)
-      (render-route route-string params)
-      (throw (ex-info "Could not build route: invalid params" {})))))
+    (let [invalid (invalid-params params validations)]
+      (if (empty? invalid)
+        (render-route route-string params)
+        (throw (ex-info "Could not build route: invalid params" invalid))))))
