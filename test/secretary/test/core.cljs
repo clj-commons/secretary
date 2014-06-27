@@ -128,6 +128,8 @@
 
     (is (= (secretary/dispatch! "/")
            "BAM!"))
+    (is (= (secretary/dispatch! "")
+           "BAM!"))
     (is (= (secretary/dispatch! "/users")
            "ZAP!"))
     (is (= (secretary/dispatch! "/users/1")
@@ -206,7 +208,20 @@
 
     (let [url (search-path {:query-params {:burritos 10, :tacos 200}})]
       (is (re-find #"burritos=10" url))
-      (is (re-find #"tacos=200" url)))))
+      (is (re-find #"tacos=200" url))))
+  
+  (testing "dispatch! with splat and no home route"
+    (secretary/reset-routes!)
+
+    (defroute "/users/:id" {:as params} params)
+    (defroute "*" [] "SPLAT")
+
+    (is (= (secretary/dispatch! "/users/1")
+           {:id "1"}))
+    (is (= (secretary/dispatch! "")
+           "SPLAT"))
+    (is (= (secretary/dispatch! "/users")
+           "SPLAT"))))
 
 (deftest locate-route
   (testing "locate-route includes original route as last value in return vector"

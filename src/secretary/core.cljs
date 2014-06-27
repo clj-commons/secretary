@@ -303,10 +303,18 @@
   [uri]
   (string/replace uri (re-pattern (str "^" (prefix))) ""))
 
+(defn- uri-with-leading-slash
+  "Ensures that the uri has a leading slash"
+  [uri]
+  (if (= "/" (first uri))
+    uri
+    (str "/" uri)))
+
 (defn dispatch!
   "Dispatch an action for a given route if it matches the URI path."
   [uri]
   (let [[uri-path query-string] (string/split (uri-without-prefix uri) #"\?")
+        uri-path (uri-with-leading-slash uri-path)
         query-params (when query-string
                        {:query-params (decode-query-params query-string)})
         {:keys [action params]} (locate-route uri-path)
