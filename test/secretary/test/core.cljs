@@ -51,6 +51,10 @@
            ["lol" "420"]))
     (is (not (secretary/route-matches #"/([a-z]+)/(\d+)" "/0x0A/0x0B"))))
 
+  (testing "vector routes"
+    (is (= (secretary/route-matches ["/:foo", :foo #"[0-9]+"] "/12345") {:foo "12345"}))
+    (is (not (secretary/route-matches ["/:foo", :foo #"[0-9]+"] "/haiii"))))
+
   (testing "splats"
     (is (= (secretary/route-matches "*" "")
            {:* ""}))
@@ -93,7 +97,9 @@
                                                  :format "tarzan"})
            "/blood.tarzan"))
     (is (= (secretary/render-route "/*.*" {:* ["stab" "wound"]})
-           "/stab.wound")))
+           "/stab.wound"))
+    (is (= (secretary/render-route ["/:foo", :foo #"[0-9]+"] {:foo "12345"}) "/12345"))
+    (is (thrown? ExceptionInfo (secretary/render-route ["/:foo", :foo #"[0-9]+"] {:foo "haiii"}))))
 
   (testing "it encodes replacements"
     (is (= (secretary/render-route "/users/:path" {:path "yay/for/me"}))
@@ -165,6 +171,13 @@
     (is (= (secretary/dispatch! "/xyz/123")
            ["xyz" "123"])))
 
+  (testing "dispatch! with vector routes"
+    (secretary/reset-routes!)
+    (defroute ["/:num/socks" :num #"[0-9]+"] {:keys [num]} (str num"socks"))
+
+    (is (= (secretary/dispatch! "/bacon/socks") nil))
+    (is (= (secretary/dispatch! "/123/socks") "123socks")))
+
   (testing "dispatch! with named-routes and configured prefix"
     (secretary/reset-routes!)
 
@@ -201,7 +214,18 @@
 
     (defroute "/my-route/:some-param" [params])
     (defroute #"my-regexp-route-[a-zA-Z]*" [params])
+    (defroute ["/my-vector-route/:some-param", :some-param #"[0-9]+"] [params])
 
     (is (= "/my-route/:some-param" (secretary/locate-route-value "/my-route/100")))
+    ;; is this right? shouldn't this just return nil?
+    (is (thrown? js/Error (secretary/locate-route-value "/not-a-route")))
+
+    (let [[route & validations] (secretary/locate-route-value "/my-vector-route/100")
+          {:keys [some-param]} (apply hash-map validations)]
+      (is (= "/my-vector-route/:some-param" route))
+      (is (= (.-source #"[0-9]+")
+             (.-source some-param))))
+    (is (thrown? js/Error (secretary/locate-route-value "/my-vector-route/foo")))
+
     (is (= (.-source #"my-regexp-route-[a-zA-Z]*")
            (.-source (secretary/locate-route-value "my-regexp-route-test"))))))
