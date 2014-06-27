@@ -27,6 +27,12 @@ Add secretary to your `project.clj` `:dependencies` vector:
 [secretary "1.1.1"]
 ```
 
+For the current `SNAPSHOT` version use:
+
+```clojure
+[secretary "1.1.2-SNAPSHOT"]
+```
+
 ## Guide
 
 To get started `:require` secretary somewhere in your project.
