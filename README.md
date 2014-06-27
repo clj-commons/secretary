@@ -27,7 +27,6 @@ Add secretary to your `project.clj` `:dependencies` vector:
 [secretary "1.1.1"]
 ```
 
-
 ## Guide
 
 To get started `:require` secretary somewhere in your project.
@@ -300,7 +299,8 @@ vector.
 * [@james-henderson](https://github.com/james-henderson) (James Henderson)
 * [@the-kenny](https://github.com/the-kenny) (Moritz Ulrich)
 * [@timgilbert](https://github.com/timgilbert) (Tim Gilbert)
-* [@bbbates](https://github.come/bbbates) (Brendan)
+* [@bbbates](https://github.com/bbbates) (Brendan)
+* [@travis](https://github.come/travis) (Travis Vachon)
 
 
 ## License
