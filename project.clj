@@ -18,7 +18,8 @@
                    [com.cemerick/clojurescript.test "0.2.3-SNAPSHOT"]]}}
 
   :aliases
-  {"test-once" ["do" "clean," "cljsbuild" "once" "test"]
+  {"run-tests" ["do" "clean," "cljsbuild" "once" "test"]
+   "test-once" ["do" "clean," "cljsbuild" "once" "test"]
    "auto-test" ["do" "clean," "cljsbuild" "auto" "test"]}
 
   :cljsbuild
