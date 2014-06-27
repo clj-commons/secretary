@@ -17,6 +17,7 @@ A client-side router for ClojureScript.
 - [Example with history](#example-with-googhistory)
 - [Available protocols](#available-protocols)
 - [Contributors](#contributors)
+- [Committers](#committers)
 
 
 ## Installation
@@ -308,6 +309,11 @@ vector.
 * [@bbbates](https://github.com/bbbates) (Brendan)
 * [@travis](https://github.come/travis) (Travis Vachon)
 
+## Committers
+
+* [@gf3](https://github.com/gf3) (Gianni Chiappetta)
+* [@noprompt](https://github.com/noprompt) (Joel Holdbrooks)
+* [@joelash](https://github.com/joelash) (Joel Friedman)
 
 ## License
 
