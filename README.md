@@ -203,7 +203,7 @@ call
 (secretary/set-config! :prefix "#")
 ```
 
-to prefix gnerated URIs with a "#".
+to prefix generated URIs with a "#".
 
 ```clojure
 (user-path {:id 1})
