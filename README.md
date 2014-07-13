@@ -307,7 +307,7 @@ vector.
 * [@the-kenny](https://github.com/the-kenny) (Moritz Ulrich)
 * [@timgilbert](https://github.com/timgilbert) (Tim Gilbert)
 * [@bbbates](https://github.com/bbbates) (Brendan)
-* [@travis](https://github.come/travis) (Travis Vachon)
+* [@travis](https://github.com/travis) (Travis Vachon)
 
 ## Committers
 
