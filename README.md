@@ -164,7 +164,7 @@ regular expression matchers.
   (js/console.log (pr-str query-params)))
 
 ;; In both instances...
-(secretary/dispach! "/users/10?action=delete")
+(secretary/dispatch! "/users/10?action=delete")
 ;; ... will log
 ;; User: 10
 ;; "{:action \"delete\"}"
