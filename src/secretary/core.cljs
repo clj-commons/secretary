@@ -1,179 +1,99 @@
 (ns secretary.core
-  (:require [clojure.string :as string]
-            [clojure.walk :refer [keywordize-keys]]))
+  (:require
+   [clojure.string :as string]
+   [secretary.codec :as codec]))
 
-;;----------------------------------------------------------------------
+;; ---------------------------------------------------------------------
 ;; Protocols
 
 (defprotocol IRouteMatches
-  (route-matches [this route]))
+  (-route-matches [this x]))
 
 (defprotocol IRouteValue
-  (route-value [this]))
+  (-route-value [this]))
 
 (defprotocol IRenderRoute
-  (render-route
-    [this]
-    [this params]))
+  (-render-route [this] [this params]))
 
-;;----------------------------------------------------------------------
-;; Configuration
+(defn route-matches
+  "Extract matches from x with route. route must satisfy IRouteMatches."
+  [route x]
+  (-route-matches route x))
 
-(def ^:dynamic *config*
-  (atom {:prefix ""}))
+(defn route-value
+  "Return the value for a route. route must satisfy IRouteValue."
+  [route]
+  (-route-value route))
 
-(defn get-config
-  "Gets a value for *config* at path."
-  [path]
-  (let [path (if (sequential? path) path [path])]
-    (get-in @*config* path)))
+(defn render-route
+  "Return a representation of route optionally with params. route must 
+  satisfy IRenderRoute."
+  ([route] (-render-route route))
+  ([route params] (-render-route route params)))
 
-(defn set-config!
-  "Associates a value val for *config* at path."
-  [path val]
-  (let [path (if (sequential? path) path [path])]
-    (swap! *config* assoc-in path val)))
+;; ---------------------------------------------------------------------
+;; Route
 
-;;----------------------------------------------------------------------
-;; Parameter encoding
+(defrecord Route [pattern action]
+  IRouteValue
+  (-route-value [_]
+    (if (satisfies? IRouteValue pattern)
+      (-route-value pattern)
+      pattern))
 
-(def encode js/encodeURIComponent)
+  IRouteMatches
+  (-route-matches [_ x]
+    (when (satisfies? IRouteMatches pattern)
+      (-route-matches pattern x)))
 
-(defmulti
-  ^{:private true
-    :doc "Given a key and a value return and encoded key-value pair."}
-  encode-pair
-  (fn [[k v]]
-    (cond
-     (or (sequential? v) (set? v))
-     ::sequential
-     (or (map? v) (satisfies? IRecord v))
-     ::map)))
+  IRenderRoute
+  (-render-route [_]
+    (when (satisfies? IRenderRoute pattern)
+      (-render-route pattern)))
 
-(defn- key-index
-  ([k] (str (name k) "[]"))
-  ([k index]
-     (str (name k) "[" index "]")))
+  (-render-route [_ params]
+    (when (satisfies? IRenderRoute pattern)
+      (-render-route pattern params)))
 
-(defmethod encode-pair ::sequential [[k v]]
-  (let [encoded (map-indexed
-                 (fn [i x]
-                   (let [pair (if (coll? x)
-                                [(key-index k i) x]
-                                [(key-index k) x])]
-                     (encode-pair pair)))
-                 v)]
-    (string/join \& encoded)))
+  IFn
+  (-invoke [this]
+    (-render-route this))
 
-(defmethod encode-pair ::map [[k v]]
-  (let [encoded (map
-                 (fn [[ik iv]]
-                   (encode-pair [(key-index k (name ik)) iv]))
-                 v)]
-    (string/join \& encoded)))
+  (-invoke [this params]
+    (-render-route this params)))
 
-(defmethod encode-pair :default [[k v]]
-  (str (name k) \= (encode (str v))))
 
-(defn encode-query-params
-  "Convert a map of query parameters into url encoded string."
-  [query-params]
-  (string/join \& (map encode-pair query-params)))
+(defn make-route
+  "Given a "
+  [pattern action]
+  {:pre [(ifn? action)]}
+  (Route. pattern action))
 
-(defn encode-uri
-  "Like js/encodeURIComponent excepts ignore slashes."
-  [uri]
-  (->> (string/split uri #"/")
-       (map encode)
-       (string/join "/")))
 
-;;----------------------------------------------------------------------
-;; Parameter decoding
+;; ---------------------------------------------------------------------
+;; Dispatcher 
 
-(def decode js/decodeURIComponent)
+(deftype Dispatcher [routes handler]
+  ICollection
+  (-conj [_ route]
+    (assert (satisfies? IRouteMatches route) "route must satisfy IRouteMatches")
+    (Dispatcher. (conj routes route) handler))
 
-(defn- parse-path
-  "Parse a value from a serialized query-string key index. If the
-  index value is empty 0 is returned, if it's a digit it returns the
-  js/parseInt value, otherwise it returns the extracted index."
-  [path]
-  (let [index-re #"\[([^\]]*)\]*" ;; Capture the index value.
-        parts (re-seq index-re path)]
-    (map
-     (fn [[_ part]]
-       (cond
-        (empty? part) 0
-        (re-matches #"\d+" part) (js/parseInt part)
-        :else part))
-     parts)))
+  IFn
+  (-invoke [_ dispatch-val]
+    (handler routes dispatch-val)))
 
-(defn- key-parse
-  "Return a key path for a serialized query-string entry.
-
-  Ex.
-
-    (key-parse \"foo[][a][][b]\")
-    ;; => (\"foo\" 0 \"a\" 0 \"b\")
-  "
-  [k]
-  (let [re #"([^\[\]]+)((?:\[[^\]]*\])*)?"
-        [_ key path] (re-matches re k)
-        parsed-path (when path (parse-path path))]
-    (cons key parsed-path)))
-
-(defn- assoc-in-query-params
-  "Like assoc-in but numbers in path create vectors instead of maps.
-
-  Ex.
-
-    (assoc-in-query-params {} [\"foo\" 0] 1)
-    ;; => {\"foo\" [1]}
-
-    (assoc-in-query-params {} [\"foo\" 0 \"a\"] 1)
-    ;; => {\"foo\" [{\"a\" 1}]}
-  "
-  [m path v]
-  (let [heads (fn [xs]
-                (map-indexed
-                 (fn [i _]
-                   (take (inc i) xs))
-                 xs))
-        hs (heads path)
-        m (reduce
-           (fn [m h]
-             (if (and (or (number? (last h)))
-                      (not (vector? (get-in m (butlast h)))))
-               (assoc-in m (butlast h) [])
-               m))
-           m
-           hs)]
-    (if (zero? (last path))
-      (update-in m (butlast path) conj v)
-      (assoc-in m path v))))
-
-(defn decode-query-params
-  "Extract a map of query parameters from a query string."
-  [query-string]
-  (let [parts (string/split query-string #"&")
-        params (reduce
-                (fn [m part]
-                  ;; We only want two parts since the part on the right hand side
-                  ;; could potentially contain an =.
-                  (let [[k v] (string/split part #"=" 2)]
-                    (assoc-in-query-params m (key-parse k) (decode v))))
-                {}
-                parts)
-        params (keywordize-keys params)]
-    params))
-
-;;----------------------------------------------------------------------
+;; ---------------------------------------------------------------------
 ;; Route compilation
 
 ;; The implementation for route compilation was inspired by Clout and
 ;; modified to suit JavaScript and Secretary.
 ;; SEE: https://github.com/weavejester/clout
 
-(defn- re-matches*
+(def ^:private re-escape-chars
+  (set "\\.*+|?()[]{}$^"))
+
+(defn ^:private re-matches*
   "Like re-matches but result is a always vector. If re does not
   capture matches then it will return a vector of [m m] as if it had a
   single capture. Other wise it maintains consistent behavior with
@@ -183,19 +103,16 @@
     (when ms
       (if (sequential? ms) ms [ms ms]))))
 
-(def ^:private re-escape-chars
-  (set "\\.*+|?()[]{}$^"))
+(defn ^:private re-escape [s]
+  (reduce
+   (fn [s c]
+     (if (re-escape-chars c)
+       (str s \\ c)
+       (str s c)))
+   ""
+   s))
 
-(defn- re-escape [s]
- (reduce
-  (fn [s c]
-    (if (re-escape-chars c)
-      (str s \\ c)
-      (str s c)))
-  ""
-  s))
-
-(defn- lex*
+(defn ^:private lex*
   "Attempt to lex a single token from s with clauses. Each clause is a
   pair of [regexp action] where action is a function. regexp is
   expected to begin with ^ and contain a single capture. If the
@@ -208,7 +125,7 @@
        [(subs s (count m)) (action c)]))
    clauses))
 
-(defn- lex-route
+(defn ^:private lex-route
   "Return a pair of [regex params]. regex is a compiled regular
   expression for matching routes. params is a list of route param
   names (:*, :id, etc.). "
@@ -219,9 +136,9 @@
         (recur s (str pattern r) (conj params p)))
       [(re-pattern (str \^ pattern \$)) (remove nil? params)])))
 
-(defn- compile-route
+(defn ^:private compile-route
   "Given a route return an instance of IRouteMatches."
-  [orig-route]
+  [^string s]
   (let [clauses [[#"^\*([^\s.:*/]*)" ;; Splats, named splates
                   (fn [v]
                     (let [r "(.*?)"
@@ -238,138 +155,75 @@
                   (fn [v]
                     (let [r (re-escape v)]
                       [r]))]]
-       [re params] (lex-route orig-route clauses)]
-   (reify
-     IRouteValue
-     (route-value [this] orig-route)
+        [re params] (lex-route s clauses)]
+    (reify
+      IRouteValue
+      (-route-value [this] s)
 
-     IRouteMatches
-     (route-matches [_ route]
-       (when-let [[_ & ms] (re-matches* re route)]
-         (->> (interleave params (map decode ms))
-              (partition 2)
-              (merge-with vector {})))))))
+      IRouteMatches
+      (-route-matches [_ route]
+        (when-let [[_ & ms] (re-matches* re route)]
+          (->> (interleave params (map js/decodeURIComponent ms))
+               (partition 2)
+               (merge-with vector {})))))))
 
-;;----------------------------------------------------------------------
-;; Route rendering
+;; ---------------------------------------------------------------------
+;; Dispatcher
 
-(defn ^:internal render-route* [obj & args]
-  (when (satisfies? IRenderRoute obj)
-    (apply render-route obj args)))
+(defn request-map [s]
+  (let [[uri query-string] (string/split s #"\?")]
+    {:uri uri
+     :query-string query-string}))
 
-;;----------------------------------------------------------------------
-;; Routes adding/removing
+(defn wrap-query-params [handler]
+  (fn [req]
+    (->> (str (:query-string req))
+         (codec/decode-query-params)
+         (assoc req :query-params)
+         (handler))))
 
-(def ^:dynamic *routes*
-  (atom []))
+(defn wrap-route [handler routes]
+  (fn [req]
+    (if-let [[route params] (some (fn [r]
+                                    (when-let [ms (route-matches r (:uri req))]
+                                      [r ms]))
+                                  routes)]
+      (handler (assoc req :route route :params params))
+      (handler req))))
 
-(defn add-route! [obj action]
-  (let [obj (if (string? obj)
-              (compile-route obj)
-              obj)]
-    (swap! *routes* conj [obj action])))
+(defn uri-dispatcher
+  "Return an instance of Dispatcher which when invoked with a uri attempts 
+  to locate, match, and apply a routing action. Optionally a ring-style 
+  handler may be passed."
+  ([routes]
+     (uri-dispatcher routes identity))
+  ([routes handler]
+     (Dispatcher. routes (fn [routes uri]
+                           (let [h (-> (handler identity)
+                                       (wrap-route routes)
+                                       (wrap-query-params))
+                                 {:keys [route] :as req} (h (request-map uri))]
+                             (when route
+                               (.action route (dissoc req :route))))))))
 
-(defn remove-route! [obj]
-  (swap! *routes*
-         (fn [rs]
-           (filterv
-            (fn [[x _]]
-              (not= x obj))
-            rs))))
-
-(defn reset-routes! []
-  (reset! *routes* []))
-
-;;----------------------------------------------------------------------
-;; Route lookup and dispatch
-
-(defn locate-route [route]
-  (some
-   (fn [[compiled-route action]]
-     (when-let [params (route-matches compiled-route route)]
-       {:action action :params params :route compiled-route}))
-   @*routes*))
-
-(defn locate-route-value
-  "Returns original route value as set in defroute when passed a URI path."
-  [uri]
-  (-> uri locate-route :route route-value))
-
-(defn- prefix
-  []
-  (str (get-config [:prefix])))
-
-(defn- uri-without-prefix
-  [uri]
-  (string/replace uri (re-pattern (str "^" (prefix))) ""))
-
-(defn- uri-with-leading-slash
-  "Ensures that the uri has a leading slash"
-  [uri]
-  (if (= "/" (first uri))
-    uri
-    (str "/" uri)))
-
-(defn dispatch!
-  "Dispatch an action for a given route if it matches the URI path."
-  [uri]
-  (let [[uri-path query-string] (string/split (uri-without-prefix uri) #"\?")
-        uri-path (uri-with-leading-slash uri-path)
-        query-params (when query-string
-                       {:query-params (decode-query-params query-string)})
-        {:keys [action params]} (locate-route uri-path)
-        action (or action identity)
-        params (merge params query-params)]
-    (action params)))
-
-(defn invalid-params [params validations]
-  (reduce (fn [m [key validation]]
-            (let [value (get params key)]
-              (if (re-matches validation value)
-                m
-                (assoc m key [value validation]))))
-          {} (partition 2 validations)))
-
-(defn- params-valid? [params validations]
-  (empty? (invalid-params params validations)))
-
-;;----------------------------------------------------------------------
+;; ---------------------------------------------------------------------
 ;; Protocol implementations
 
-(extend-protocol IRouteMatches
-  string
-  (route-matches [this route]
-    (route-matches (compile-route this) route))
+;;; string
 
-  js/RegExp
-  (route-matches [this route]
-    (when-let [[_ & ms] (re-matches* this route)]
-      (vec ms)))
+(extend-type string
+  IRouteValue
+  (-route-value [this] this)
 
-  cljs.core/PersistentVector
-  (route-matches [[route-string & validations] route]
-    (let [params (route-matches (compile-route route-string) route)]
-      (when (params-valid? params validations)
-        params))))
+  IRouteMatches
+  (-route-matches [this route]
+    (-route-matches (compile-route this) route))
 
-(extend-protocol IRouteValue
-  string
-  (route-value [this]
-    (route-value (compile-route this)))
+  IRenderRoute
+  (-render-route [this]
+    (-render-route this {}))
 
-  js/RegExp
-  (route-value [this] this)
-
-  cljs.core/PersistentVector
-  (route-value [[route-string & validations]]
-    (vec (cons (route-value route-string) validations))))
-
-(extend-protocol IRenderRoute
-  string
-  (render-route [this]
-    (render-route this {}))
-
-  (render-route [this params]
+  (-render-route [this params]
     (let [{:keys [query-params] :as m} params
           a (atom m)
           path (.replace this (js/RegExp. ":[^\\s.:*/]+|\\*[^\\s.:*/]*" "g")
@@ -381,20 +235,57 @@
                                  replacement (if (sequential? v)
                                                (do
                                                  (swap! a assoc lookup (next v))
-                                                 (encode-uri (first v)))
-                                               (if v (encode-uri v) $1))]
-                             replacement)))
-          path (str (get-config [:prefix]) path)]
+                                                 (codec/encode-uri (first v)))
+                                               (if v (codec/encode-uri v) $1))]
+                             replacement)))]
       (if-let [query-string (and query-params
-                                 (encode-query-params query-params))]
+                                 (codec/encode-query-params query-params))]
         (str path "?" query-string)
-        path)))
+        path))))
 
-  cljs.core/PersistentVector
-  (render-route [this]
-    (render-route this {}))
 
-  (render-route [[route-string & validations] params]
+;;; RegExp
+
+(extend-type js/RegExp
+  IRouteValue
+  (-route-value [this] this)
+
+  IRouteMatches
+  (-route-matches [this route]
+    (when-let [[_ & ms] (re-matches* this route)]
+      (vec ms))))
+
+
+;;; PersistentVector
+
+(defn ^:private invalid-params [params validations]
+  (reduce (fn [m [key validation]]
+            (let [value (get params key)]
+              (if (re-matches validation value)
+                m
+                (assoc m key [value validation]))))
+          {} (partition 2 validations)))
+
+(defn ^:private params-valid? [params validations]
+  (empty? (invalid-params params validations)))
+
+
+(extend-type PersistentVector
+  IRouteValue
+  (-route-value [[route-string & validations]]
+    (vec (cons (route-value route-string) validations)))
+
+  IRouteMatches
+  (-route-matches [[route-string & validations] route]
+    (let [params (route-matches (compile-route route-string) route)]
+      (when (params-valid? params validations)
+        params)))
+
+  IRenderRoute
+  (-render-route [this]
+    (-render-route this {}))
+
+  (-render-route [[route-string & validations] params]
     (let [invalid (invalid-params params validations)]
       (if (empty? invalid)
         (render-route route-string params)
