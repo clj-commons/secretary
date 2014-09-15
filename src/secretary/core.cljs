@@ -64,7 +64,7 @@
 
 
 (defn make-route
-  "Given a "
+  "Return an instance of Route given a pattern and action."
   [pattern action]
   {:pre [(ifn? action)]}
   (Route. pattern action))
@@ -168,7 +168,7 @@
                (merge-with vector {})))))))
 
 ;; ---------------------------------------------------------------------
-;; Dispatcher
+;; URI dispatcher
 
 (defn request-map [s]
   (let [[uri query-string] (string/split s #"\?")]
