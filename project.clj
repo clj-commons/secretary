@@ -1,4 +1,21 @@
-(defproject secretary "2.0.0-SNAPSHOT"
+(require '[clojure.java.shell])
+
+(defn secretary-version
+  "Return the current version string."
+  [base-version {release? :release?}]
+  (if-not (true? release?)
+    (let [last-commit (-> (clojure.java.shell/sh "git" "rev-parse" "HEAD")
+                          (:out)
+                          (.trim))
+          revision (-> (clojure.java.shell/sh "git" (str "rev-list.." last-commit))
+                       (:out)
+                       (.. trim (split "\\n"))
+                       (count))
+          sha (subs last-commit 0 6)]
+      (str base-version "." revision "-" sha))
+    base-version))
+
+(defproject secretary (secretary-version "2.0.0" {:release? false})
   :description "A client-side router for ClojureScript."
   :url "https://github.com/gf3/secretary"
   :license {:name "Eclipse Public License - v 1.0"
