@@ -96,7 +96,8 @@
   (testing "make-route compiles string routes"
     (let [s "/a/:x"]
       (is (not= (:pattern (s/make-route s identity))
-                s)))))
+                s)))
+    (is (thrown? js/Error (s/make-route "foo" 10)))))
 
 ;; ---------------------------------------------------------------------
 ;; Dispatch testing
