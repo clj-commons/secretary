@@ -31,57 +31,6 @@
   ([route] (-render-route route))
   ([route params] (-render-route route params)))
 
-;; ---------------------------------------------------------------------
-;; Route
-
-(defrecord Route [pattern action]
-  IRouteValue
-  (-route-value [_]
-    (if (satisfies? IRouteValue pattern)
-      (-route-value pattern)
-      pattern))
-
-  IRouteMatches
-  (-route-matches [_ x]
-    (when (satisfies? IRouteMatches pattern)
-      (-route-matches pattern x)))
-
-  IRenderRoute
-  (-render-route [_]
-    (when (satisfies? IRenderRoute pattern)
-      (-render-route pattern)))
-
-  (-render-route [_ params]
-    (when (satisfies? IRenderRoute pattern)
-      (-render-route pattern params)))
-
-  IFn
-  (-invoke [this]
-    (-render-route this))
-
-  (-invoke [this params]
-    (-render-route this params)))
-
-
-(defn make-route
-  "Return an instance of Route given a pattern and action."
-  [pattern action]
-  {:pre [(ifn? action)]}
-  (Route. pattern action))
-
-
-;; ---------------------------------------------------------------------
-;; Dispatcher 
-
-(deftype Dispatcher [routes handler]
-  ICollection
-  (-conj [_ route]
-    (assert (satisfies? IRouteMatches route) "route must satisfy IRouteMatches")
-    (Dispatcher. (conj routes route) handler))
-
-  IFn
-  (-invoke [_ dispatch-val]
-    (handler routes dispatch-val)))
 
 ;; ---------------------------------------------------------------------
 ;; Route compilation
@@ -167,6 +116,52 @@
                (partition 2)
                (merge-with vector {})))))))
 
+
+;; ---------------------------------------------------------------------
+;; Route
+
+(defrecord Route [pattern action]
+  IRouteValue
+  (-route-value [_]
+    (if (satisfies? IRouteValue pattern)
+      (-route-value pattern)
+      pattern))
+
+  IRouteMatches
+  (-route-matches [_ x]
+    (when (satisfies? IRouteMatches pattern)
+      (-route-matches pattern x)))
+
+  IRenderRoute
+  (-render-route [_]
+    (when (satisfies? IRenderRoute pattern)
+      (-render-route pattern)))
+
+  (-render-route [_ params]
+    (when (satisfies? IRenderRoute pattern)
+      (-render-route pattern params)))
+
+  IFn
+  (-invoke [this]
+    (-render-route this))
+
+  (-invoke [this params]
+    (-render-route this params)))
+
+(defn route?
+  "Returns true if x is an instance of Route."
+  [x]
+  (instance? Route x))
+
+(defn make-route
+  "Returns an instance of Route given a pattern and action."
+  [pattern action]
+  {:pre [(ifn? action)]}
+  (if (string? pattern)
+    (Route. (compile-route pattern) action)
+    (Route. pattern action)))
+
+
 ;; ---------------------------------------------------------------------
 ;; URI dispatcher
 
@@ -198,13 +193,14 @@
   ([routes]
      (uri-dispatcher routes identity))
   ([routes handler]
-     (Dispatcher. routes (fn [routes uri]
-                           (let [h (-> (handler identity)
-                                       (wrap-route routes)
-                                       (wrap-query-params))
-                                 {:keys [route] :as req} (h (request-map uri))]
-                             (when route
-                               (.action route (dissoc req :route))))))))
+     (fn [uri]
+       (let [h (-> (handler identity)
+                   (wrap-route routes)
+                   (wrap-query-params))
+             {:keys [route] :as req} (h (request-map uri))]
+         (when route
+           (.action route (dissoc req :route)))))))
+
 
 ;; ---------------------------------------------------------------------
 ;; Protocol implementations

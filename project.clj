@@ -18,7 +18,6 @@
           [weasel "0.4.0-SNAPSHOT"]
           [spellhouse/clairvoyant "0.0-33-g771b57f"]]
 
-
          :plugins
          [[lein-cljsbuild "1.0.3"]
           [com.cemerick/austin "0.1.3"]

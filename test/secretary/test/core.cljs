@@ -92,6 +92,12 @@
     (is (= (s/render-route "/users/:id" {})
            "/users/:id"))))
 
+(deftest make-route-test
+  (testing "make-route compiles string routes"
+    (let [s "/a/:x"]
+      (is (not= (:pattern (s/make-route s identity))
+                s)))))
+
 ;; ---------------------------------------------------------------------
 ;; Dispatch testing
 
