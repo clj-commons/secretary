@@ -256,10 +256,11 @@
 
 (defn ^:private invalid-params [params validations]
   (reduce (fn [m [key validation]]
-            (let [value (get params key)]
+            (if-let [value (get params key)]
               (if (re-matches validation value)
                 m
-                (assoc m key [value validation]))))
+                (assoc m key [value validation]))
+              m))
           {} (partition 2 validations)))
 
 (defn ^:private params-valid? [params validations]
