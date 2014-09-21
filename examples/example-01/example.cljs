@@ -35,7 +35,7 @@
 
 ;; Quick and dirty history configuration.
 (let [h (History.)]
-  (goog.events/listen h EventType/NAVIGATE #(secretary/dispatch! (.-token %)))
+  (goog.events/listen h EventType.NAVIGATE #(secretary/dispatch! (.-token %)))
   (doto h
     (.setEnabled true)))
 
