@@ -30,7 +30,7 @@
                         :optimizations :whitespace
                         :pretty-print true}}
             {:id "example-01"
-             :source-paths ["src/" "examples/example-01"]
+             :source-paths ["src/" "examples/"]
              :compiler {:output-to "examples/example-01/example.js"
                         :optimizations :whitespace
                         :pretty-print true}}]})

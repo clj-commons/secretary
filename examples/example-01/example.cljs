@@ -1,4 +1,4 @@
-(ns example
+(ns example-01.example
   (:require [secretary.core :as secretary]
             [goog.events :as events])
   (:require-macros [secretary.core :refer [defroute]])
