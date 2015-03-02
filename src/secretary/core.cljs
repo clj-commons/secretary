@@ -1,7 +1,7 @@
 (ns secretary.core
   (:require [clojure.string :as string]
             [clojure.walk :refer [keywordize-keys]])
-  (:require-macros [secretary.core :as s]))
+  (:require-macros [secretary.core :refer [defroute]]))
 
 ;;----------------------------------------------------------------------
 ;; Protocols
