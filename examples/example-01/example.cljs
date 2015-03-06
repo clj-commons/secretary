@@ -1,6 +1,7 @@
-(ns example
-  (:require [secretary.core :as secretary :include-macros true :refer [defroute]]
+(ns example-01.example
+  (:require [secretary.core :as secretary]
             [goog.events :as events])
+  (:require-macros [secretary.core :refer [defroute]])
   (:import goog.History
            goog.history.EventType))
 

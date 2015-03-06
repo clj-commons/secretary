@@ -7,11 +7,11 @@
             :comments "same as Clojure"}
 
   :dependencies
-  [[org.clojure/clojure "1.5.1"]
-   [org.clojure/clojurescript "0.0-2156" :scope "provided"]]
+  [[org.clojure/clojure "1.6.0"]
+   [org.clojure/clojurescript "0.0-2913" :scope "provided"]]
 
   :plugins
-  [[lein-cljsbuild "1.0.2"]]
+  [[lein-cljsbuild "1.0.5"]]
 
   :profiles
   {:dev {:plugins [[com.cemerick/austin "0.1.3"]
@@ -30,7 +30,7 @@
                         :optimizations :whitespace
                         :pretty-print true}}
             {:id "example-01"
-             :source-paths ["src/" "examples/example-01"]
+             :source-paths ["src/" "examples/"]
              :compiler {:output-to "examples/example-01/example.js"
                         :optimizations :whitespace
                         :pretty-print true}}]})
