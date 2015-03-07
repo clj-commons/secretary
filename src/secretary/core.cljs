@@ -88,7 +88,7 @@
       [(re-pattern (str \^ pattern \$)) (remove nil? params)])))
 
 (defn ^:private compile-route
-  "Given a route return an instance of IRouteMatches."
+  "Given a string route return an instance of IRouteMatches."
   [^string s]
   (let [clauses [[#"^\*([^\s.:*/]*)" ;; Splats, named splates
                   (fn [v]
@@ -116,7 +116,13 @@
         (when-let [[_ & ms] (re-matches* re route)]
           (->> (interleave params (map js/decodeURIComponent ms))
                (partition 2)
-               (merge-with vector {})))))))
+               (merge-with vector {}))))
+      IRenderRoute
+      (-render-route [_]
+        (-render-route s))
+
+      (-render-route [_ params]
+        (-render-route s params)))))
 
 
 ;; ---------------------------------------------------------------------
@@ -135,11 +141,11 @@
       (-route-matches pattern x)))
 
   IRenderRoute
-  (-render-route [_]
+  (-render-route [this]
     (when (satisfies? IRenderRoute pattern)
       (-render-route pattern)))
 
-  (-render-route [_ params]
+  (-render-route [this params]
     (when (satisfies? IRenderRoute pattern)
       (-render-route pattern params)))
 

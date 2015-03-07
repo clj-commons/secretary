@@ -177,3 +177,13 @@
       (is (= (d2 "/ur4/bacon/socks") nil))
       (is (= (d2 "/ur4/123/socks") "123socks"))
       (is (= (d2 "/ur5/123") "123")))))
+
+;; ---------------------------------------------------------------------
+;; Render testing
+
+(s/defroute render1 "/render1/:id" [])
+
+(deftest render-test
+  (testing "calling a route renders it"
+    (is (= (render1 {:id 10})
+           "/render1/10"))))
