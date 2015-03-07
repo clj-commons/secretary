@@ -132,18 +132,20 @@
 (s/defroute ur1 "/" {:as req}
   req)
 
-(s/defroute ur2 #"/([a-z]+)" {[letters] :params qps :query-params :as req}
+(s/defroute ur2 #"/ur2/([a-z]+)" {[letters] :params qps :query-params :as req}
   [letters qps])
 
-(s/defroute ur3 #"/([a-z]+)/(\d+)" {[letters digits] :params}
+(s/defroute ur3 #"/ur3/([a-z]+)/(\d+)" {[letters digits] :params}
   [letters digits])
 
-(s/defroute ur4 ["/:num/socks" :num #"[0-9]+"] {{:keys [num]} :params}
+(s/defroute ur4 ["/ur4/:num/socks" :num #"[0-9]+"] {{:keys [num]} :params}
   (str num "socks"))
 
-(def d2
-  (s/uri-dispatcher [ur1 ur2 ur3 ur4]))
+(s/defroute ur5 #"/ur5/(\d+)" [d]
+  d)
 
+(def d2
+  (s/uri-dispatcher [ur1 ur2 ur3 ur4 ur5]))
 
 (deftest uri-dispatcher-test
   (testing "uri-dispatcher (string routes)"
@@ -162,15 +164,16 @@
              {:foo p1 :bar p2})))
 
     (testing "uri-dispatcher (regex-routes)"
-      (is (= (d2 "/xyz/123")
-             ["xyz" "123"]))
-
-      (is (= (d2 "/abc")
+      (is (= (d2 "/ur2/abc")
              ["abc" {}]))
 
-      (is (= (d2 "/abc?flavor=pineapple&walnuts=true")
-             ["abc" {:flavor "pineapple" :walnuts "true"}])))
+      (is (= (d2 "/ur2/abc?flavor=pineapple&walnuts=true")
+             ["abc" {:flavor "pineapple" :walnuts "true"}]))
+
+      (is (= (d2 "/ur3/xyz/123")
+             ["xyz" "123"])))
 
     (testing "uri-dispatcher (vector routes)"
-      (is (= (d2 "/bacon/socks") nil))
-      (is (= (d2 "/123/socks") "123socks")))))
+      (is (= (d2 "/ur4/bacon/socks") nil))
+      (is (= (d2 "/ur4/123/socks") "123socks"))
+      (is (= (d2 "/ur5/123") "123")))))

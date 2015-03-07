@@ -1,17 +1,30 @@
 (ns secretary.core)
 
 (defn ^:private route-action-form [destruct body]
-  `(fn [params#]
-     (cond
-      (map? params#)
-      (let [~(if (vector? destruct)
-               {:keys destruct}
-               destruct) params#]
-        ~@body)
+  (let [params (gensym)]
+    `(fn [~params]
+       (cond
+        (map? ~params)
+        (if (:ring-route? (meta ~params))
+          ~(cond
+            (map? destruct)
+            `(let [~destruct ~params]
+               ~@body)
 
-      (vector? params#)
-      (let [~destruct params#]
-        ~@body))))
+            (vector? destruct)
+            `(if (map? (:params ~params))
+               (let [{:keys ~destruct} (:params ~params)]
+                 ~@body)
+               (let [~destruct (:params ~params)]
+                 ~@body)))
+          (let [~(if (vector? destruct)
+                   {:keys destruct}
+                   destruct) ~params]
+            ~@body))
+
+        (vector? ~params)
+        (let [~destruct ~params]
+          ~@body)))))
 
 (defmacro ^{:arglists '([name route destruct & body])}
   defroute

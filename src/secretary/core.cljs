@@ -189,7 +189,7 @@
       (handler req))))
 
 (defn uri-dispatcher
-  "Return an instance of Dispatcher which when invoked with a uri attempts 
+  "Return a dispatcher which when invoked with a uri attempts 
   to locate, match, and apply a routing action. Optionally a ring-style 
   handler may be passed."
   ([routes]
@@ -201,7 +201,9 @@
                    (wrap-query-params))
              {:keys [route] :as req} (h (request-map uri))]
          (when route
-           (.action route (dissoc req :route)))))))
+           (let [req-map (-> (dissoc req :route)
+                             (with-meta {:ring-route? true}))]
+             (.action route req-map)))))))
 
 
 ;; ---------------------------------------------------------------------
