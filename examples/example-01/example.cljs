@@ -18,7 +18,7 @@
   (set-html! application "<h1>OMG! YOU'RE HOME!</h1>"))
 
 ;; /#/users
-(defroute user-path "/users" []
+(defroute users-path "/users" []
   (set-html! application "<h1>USERS!</h1>"))
 
 ;; /#/users/:id
@@ -31,13 +31,21 @@
   (set-html! application "<h1>YOU HIT THE JACKPOT!</h1>"))
 
 ;; Catch all
-(defroute "*" []
+(defroute wildcard "*" []
   (set-html! application "<h1>LOL! YOU LOST!</h1>"))
+
+(def dispatch!
+  (secretary/uri-dispatcher
+   [home-path
+    users-path
+    user-path
+    jackpot-path
+    wildcard]))
 
 ;; Quick and dirty history configuration.
 (let [h (History.)]
-  (goog.events/listen h EventType.NAVIGATE #(secretary/dispatch! (.-token %)))
+  (goog.events/listen h EventType.NAVIGATE #(dispatch! (.-token %)))
   (doto h
     (.setEnabled true)))
 
-(secretary/dispatch! "/")
+(dispatch! "/")
