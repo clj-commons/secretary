@@ -117,6 +117,7 @@
           (->> (interleave params (map js/decodeURIComponent ms))
                (partition 2)
                (merge-with vector {}))))
+
       IRenderRoute
       (-render-route [_]
         (-render-route s))
@@ -267,10 +268,16 @@
 (defn ^:private invalid-params [params validations]
   (reduce (fn [m [key validation]]
             (if-let [value (get params key)]
-              (if (re-matches validation value)
-                m
-                (assoc m key [value validation]))
-              m))
+              (cond
+               (regexp? validation)
+               (if (re-matches validation value)
+                 m
+                 (assoc m key [value validation]))
+               (ifn? validation)
+               (if (validation value)
+                 m
+                 (assoc m key [value validation]))
+               :else m)))
           {} (partition 2 validations)))
 
 (defn ^:private params-valid? [params validations]

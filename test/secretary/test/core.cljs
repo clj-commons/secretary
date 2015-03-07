@@ -182,8 +182,16 @@
 ;; Render testing
 
 (s/defroute render1 "/render1/:id" [])
+(s/defroute render2 ["/render2/:id" :id #"[0-9]+"] [])
+(s/defroute render3 ["/render3/:id" :id number?] [])
 
 (deftest render-test
   (testing "calling a route renders it"
     (is (= (render1 {:id 10})
-           "/render1/10"))))
+           "/render1/10"))
+    (is (= (render2 {:id "10"})
+           "/render2/10"))
+    (is (thrown? ExceptionInfo (render2 {:id "a"})))
+    (is (= (render3 {:id 10})
+           "/render3/10"))
+    (is (thrown? ExceptionInfo (render3 {:id "dip"})))))
