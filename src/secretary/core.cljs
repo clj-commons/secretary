@@ -1,7 +1,9 @@
 (ns secretary.core
   (:require
    [clojure.string :as string]
-   [secretary.codec :as codec]))
+   [secretary.codec :as codec])
+  (:require-macros
+   [secretary.core :refer [defroute]]))
 
 ;; ---------------------------------------------------------------------
 ;; Protocols

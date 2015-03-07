@@ -12,7 +12,7 @@ A client-side router for ClojureScript.
   * [Basic routing and dispatch](#basic-routing-and-dispatch)
   * [Route matchers](#route-matchers)
   * [Parameter destructuring](#parameter-destructuring)
-  * [Query parmeters](#query-parameters)
+  * [Query parameters](#query-parameters)
   * [Named routes](#named-routes)
 - [Example with history](#example-with-googhistory)
 - [Available protocols](#available-protocols)
@@ -40,7 +40,7 @@ To get started `:require` secretary somewhere in your project.
 
 ```clojure
 (ns app.routes
-  (:require [secretary.core :as secretary :include-macros true :refer [defroute]]))
+  (:require [secretary.core :as secretary :refer-macros [defroute]])
 ```
 
 

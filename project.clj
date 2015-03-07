@@ -27,19 +27,15 @@
   [[org.clojure/clojure "1.6.0"]]
 
   :profiles
-  {:dev {:source-paths
-         ["src" "dev"]
-
+  {:dev {:source-paths ["dev/" "src/"]
          :dependencies
-         [[org.clojure/clojurescript "0.0-2322"]
-          [weasel "0.4.0-SNAPSHOT"]
+         [[org.clojure/clojurescript "0.0-2913"]
+          [com.cemerick/piggieback "0.1.6-SNAPSHOT"]
+          [weasel "0.6.0"]
           [spellhouse/clairvoyant "0.0-33-g771b57f"]]
-
          :plugins
-         [[lein-cljsbuild "1.0.3"]
-          [com.cemerick/austin "0.1.3"]
+         [[lein-cljsbuild "1.0.5"]
           [com.cemerick/clojurescript.test "0.2.3-SNAPSHOT"]]
-
          :repl-options
          {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}}
 
@@ -65,7 +61,7 @@
                         :pretty-print true}}
 
             {:id "example-01"
-             :source-paths ["src/" "examples/example-01"]
+             :source-paths ["src/" "examples/"]
              :compiler {:output-to "examples/example-01/example.js"
                         :optimizations :whitespace
                         :pretty-print true}}]})

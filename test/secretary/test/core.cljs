@@ -1,11 +1,9 @@
 (ns secretary.test.core
   (:require
-   (cemerick.cljs.test :as t
-                       :include-macros true
-                       :refer [deftest testing is are])
-   (secretary.core :as s
-                   :include-macros true
-                   :refer [defroute])))
+   [cemerick.cljs.test :as t]
+   [secretary.core :as s])
+  (:require-macros
+   [cemerick.cljs.test :refer [deftest testing is are])
 
 ;; ---------------------------------------------------------------------
 ;; Route matching/rendering testing
