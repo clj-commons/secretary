@@ -1,6 +1,6 @@
 (ns secretary.test.core
   (:require
-   [cemerick.cljs.test :as t :include-macros true]
+   [cemerick.cljs.test :as t]
    [secretary.core :as s])
   (:require-macros
    [cemerick.cljs.test :refer [deftest is are testing]]))
