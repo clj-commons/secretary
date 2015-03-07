@@ -1,76 +1,74 @@
 (ns secretary.test.core
-  (:require [cemerick.cljs.test :as test]
-            [secretary.core :as sec])
-  ;; To :refer all of the used functions from secretary, replace above spec with
-  ;;[secretary.core :refer [encode-query-params decode-query-params route-matches
-  ;;     render-route reset-routes! dispatch! *config* locate-route-value]
-  (:require-macros [cemerick.cljs.test :refer [deftest is are testing]]
-                   [secretary.core :refer [defroute]]))
+  (:require
+   [cemerick.cljs.test :as t :include-macros true]
+   [secretary.core :as s])
+  (:require-macros
+   [cemerick.cljs.test :refer [deftest is are testing]]))
 
 
 (deftest query-params-test
   (testing "encodes query params"
     (let [params {:id "kevin" :food "bacon"}
-          encoded (sec/encode-query-params params)]
-      (is (= (sec/decode-query-params encoded)
+          encoded (s/encode-query-params params)]
+      (is (= (s/decode-query-params encoded)
              params)))
 
-    (are [x y] (= (sec/encode-query-params x) y)
+    (are [x y] (= (s/encode-query-params x) y)
       {:x [1 2]} "x[]=1&x[]=2"
       {:a [{:b 1} {:b 2}]} "a[0][b]=1&a[1][b]=2"
       {:a [{:b [1 2]} {:b [3 4]}]} "a[0][b][]=1&a[0][b][]=2&a[1][b][]=3&a[1][b][]=4"))
 
   (testing "decodes query params"
     (let [query-string "id=kevin&food=bacong"
-          decoded (sec/decode-query-params query-string)
-          encoded (sec/encode-query-params decoded)]
+          decoded (s/decode-query-params query-string)
+          encoded (s/encode-query-params decoded)]
       (is (re-find #"id=kevin" query-string))
       (is (re-find #"food=bacon" query-string)))
 
-    (are [x y] (= (sec/decode-query-params x) y)
+    (are [x y] (= (s/decode-query-params x) y)
       "x[]=1&x[]=2" {:x ["1" "2"]}
       "a[0][b]=1&a[1][b]=2" {:a [{:b "1"} {:b "2"}]}
       "a[0][b][]=1&a[0][b][]=2&a[1][b][]=3&a[1][b][]=4" {:a [{:b ["1" "2"]} {:b ["3" "4"]}]})))
 
 (deftest route-matches-test
   (testing "non-encoded-routes"
-    (is (not (sec/route-matches "/foo bar baz" "/foo%20bar%20baz")))
-    (is (not (sec/route-matches "/:x" "/,")))
-    (is (not (sec/route-matches "/:x" "/;")))
+    (is (not (s/route-matches "/foo bar baz" "/foo%20bar%20baz")))
+    (is (not (s/route-matches "/:x" "/,")))
+    (is (not (s/route-matches "/:x" "/;")))
 
-    (is (= (sec/route-matches "/:x" "/%2C")
+    (is (= (s/route-matches "/:x" "/%2C")
            {:x ","}))
 
-    (is (= (sec/route-matches "/:x" "/%3B")
+    (is (= (s/route-matches "/:x" "/%3B")
            {:x ";"})))
 
   (testing "utf-8 routes"
-    (is (= (sec/route-matches "/:x" "/%E3%81%8A%E3%81%AF%E3%82%88%E3%81%86")
+    (is (= (s/route-matches "/:x" "/%E3%81%8A%E3%81%AF%E3%82%88%E3%81%86")
            {:x "おはよう"})))
 
   (testing "regex-routes"
-    (sec/reset-routes!)
+    (s/reset-routes!)
 
-    (is (= (sec/route-matches #"/([a-z]+)/(\d+)" "/lol/420")
+    (is (= (s/route-matches #"/([a-z]+)/(\d+)" "/lol/420")
            ["lol" "420"]))
-    (is (not (sec/route-matches #"/([a-z]+)/(\d+)" "/0x0A/0x0B"))))
+    (is (not (s/route-matches #"/([a-z]+)/(\d+)" "/0x0A/0x0B"))))
 
   (testing "vector routes"
-    (is (= (sec/route-matches ["/:foo", :foo #"[0-9]+"] "/12345") {:foo "12345"}))
-    (is (not (sec/route-matches ["/:foo", :foo #"[0-9]+"] "/haiii"))))
+    (is (= (s/route-matches ["/:foo", :foo #"[0-9]+"] "/12345") {:foo "12345"}))
+    (is (not (s/route-matches ["/:foo", :foo #"[0-9]+"] "/haiii"))))
 
   (testing "splats"
-    (is (= (sec/route-matches "*" "")
+    (is (= (s/route-matches "*" "")
            {:* ""}))
-    (is (= (sec/route-matches "*" "/foo/bar")
+    (is (= (s/route-matches "*" "/foo/bar")
            {:* "/foo/bar"}))
-    (is (= (sec/route-matches "*.*" "cat.bat")
+    (is (= (s/route-matches "*.*" "cat.bat")
            {:* ["cat" "bat"]}))
-    (is (= (sec/route-matches "*path/:file.:ext" "/loller/skates/xxx.zip")
+    (is (= (s/route-matches "*path/:file.:ext" "/loller/skates/xxx.zip")
            {:path "/loller/skates"
             :file "xxx"
             :ext "zip"}))
-    (is (= (sec/route-matches "/*a/*b/*c" "/lol/123/abc/look/at/me")
+    (is (= (s/route-matches "/*a/*b/*c" "/lol/123/abc/look/at/me")
            {:a "lol"
             :b "123"
             :c "abc/look/at/me"}))))
@@ -78,135 +76,135 @@
 
 (deftest render-route-test
   (testing "it interpolates correctly"
-    (is (= (sec/render-route "/")
+    (is (= (s/render-route "/")
            "/"))
-    (is (= (sec/render-route "/users/:id" {:id 1})
+    (is (= (s/render-route "/users/:id" {:id 1})
            "/users/1"))
-    (is (= (sec/render-route "/users/:id/food/:food" {:id "kevin" :food "bacon"})
+    (is (= (s/render-route "/users/:id/food/:food" {:id "kevin" :food "bacon"})
            "/users/kevin/food/bacon"))
-    (is (= (sec/render-route "/users/:id" {:id 123})
+    (is (= (s/render-route "/users/:id" {:id 123})
            "/users/123"))
-    (is (= (sec/render-route "/users/:id" {:id 123 :query-params {:page 2 :per-page 10}})
+    (is (= (s/render-route "/users/:id" {:id 123 :query-params {:page 2 :per-page 10}})
            "/users/123?page=2&per-page=10"))
-    (is (= (sec/render-route "/:id/:id" {:id 1})
+    (is (= (s/render-route "/:id/:id" {:id 1})
            "/1/1"))
-    (is (= (sec/render-route "/:id/:id" {:id [1 2]})
+    (is (= (s/render-route "/:id/:id" {:id [1 2]})
            "/1/2"))
-    (is (= (sec/render-route "/*id/:id" {:id [1 2]})
+    (is (= (s/render-route "/*id/:id" {:id [1 2]})
            "/1/2"))
-    (is (= (sec/render-route "/*x/*y" {:x "lmao/rofl/gtfo"
+    (is (= (s/render-route "/*x/*y" {:x "lmao/rofl/gtfo"
                                              :y "k/thx/bai"})
            "/lmao/rofl/gtfo/k/thx/bai"))
-    (is (= (sec/render-route "/*.:format" {:* "blood"
+    (is (= (s/render-route "/*.:format" {:* "blood"
                                                  :format "tarzan"})
            "/blood.tarzan"))
-    (is (= (sec/render-route "/*.*" {:* ["stab" "wound"]})
+    (is (= (s/render-route "/*.*" {:* ["stab" "wound"]})
            "/stab.wound"))
-    (is (= (sec/render-route ["/:foo", :foo #"[0-9]+"] {:foo "12345"}) "/12345"))
-    (is (thrown? ExceptionInfo (sec/render-route ["/:foo", :foo #"[0-9]+"] {:foo "haiii"}))))
+    (is (= (s/render-route ["/:foo", :foo #"[0-9]+"] {:foo "12345"}) "/12345"))
+    (is (thrown? ExceptionInfo (s/render-route ["/:foo", :foo #"[0-9]+"] {:foo "haiii"}))))
 
   (testing "it encodes replacements"
-    (is (= (sec/render-route "/users/:path" {:path "yay/for/me"}))
+    (is (= (s/render-route "/users/:path" {:path "yay/for/me"}))
         "/users/yay/for/me")
-    (is (= (sec/render-route "/users/:email" {:email "fake@example.com"}))
+    (is (= (s/render-route "/users/:email" {:email "fake@example.com"}))
         "/users/fake%40example.com"))
 
   (testing "it adds prefixes"
-    (binding [sec/*config* (atom {:prefix "#"})]
-      (is (= (sec/render-route "/users/:id" {:id 1})
+    (binding [s/*config* (atom {:prefix "#"})]
+      (is (= (s/render-route "/users/:id" {:id 1})
              "#/users/1"))))
 
   (testing "it leaves param in string if not in map"
-    (is (= (sec/render-route "/users/:id" {})
+    (is (= (s/render-route "/users/:id" {})
            "/users/:id"))))
 
 
 (deftest defroute-test
   (testing "dispatch! with basic routes"
-    (sec/reset-routes!)
+    (s/reset-routes!)
 
-    (defroute "/" [] "BAM!")
-    (defroute "/users" [] "ZAP!")
-    (defroute "/users/:id" {:as params} params)
-    (defroute "/users/:id/food/:food" {:as params} params)
+    (s/defroute "/" [] "BAM!")
+    (s/defroute "/users" [] "ZAP!")
+    (s/defroute "/users/:id" {:as params} params)
+    (s/defroute "/users/:id/food/:food" {:as params} params)
 
-    (is (= (sec/dispatch! "/")
+    (is (= (s/dispatch! "/")
            "BAM!"))
-    (is (= (sec/dispatch! "")
+    (is (= (s/dispatch! "")
            "BAM!"))
-    (is (= (sec/dispatch! "/users")
+    (is (= (s/dispatch! "/users")
            "ZAP!"))
-    (is (= (sec/dispatch! "/users/1")
+    (is (= (s/dispatch! "/users/1")
            {:id "1"}))
-    (is (= (sec/dispatch! "/users/kevin/food/bacon")
+    (is (= (s/dispatch! "/users/kevin/food/bacon")
            {:id "kevin", :food "bacon"})))
 
   (testing "dispatch! with query-params"
-    (sec/reset-routes!)
-    (defroute "/search-1" {:as params} params)
+    (s/reset-routes!)
+    (s/defroute "/search-1" {:as params} params)
 
-    (is (not (contains? (sec/dispatch! "/search-1")
+    (is (not (contains? (s/dispatch! "/search-1")
                         :query-params)))
 
-    (is (contains? (sec/dispatch! "/search-1?foo=bar")
+    (is (contains? (s/dispatch! "/search-1?foo=bar")
                    :query-params))
 
-    (defroute "/search-2" [query-params] query-params)
+    (s/defroute "/search-2" [query-params] query-params)
 
     (let [s "abc123 !@#$%^&*"
           [p1 p2] (take 2 (iterate #(apply str (shuffle %)) s))
           r (str "/search-2?"
                  "foo=" (js/encodeURIComponent p1)
                  "&bar=" (js/encodeURIComponent p2))]
-      (is (= (sec/dispatch! r)
+      (is (= (s/dispatch! r)
              {:foo p1 :bar p2})))
 
-    (defroute #"/([a-z]+)/search" [letters {:keys [query-params]}]
+    (s/defroute #"/([a-z]+)/search" [letters {:keys [query-params]}]
       [letters query-params])
 
-    (is (= (sec/dispatch! "/abc/search")
+    (is (= (s/dispatch! "/abc/search")
            ["abc" nil]))
 
-    (is (= (sec/dispatch! "/abc/search?flavor=pineapple&walnuts=true")
+    (is (= (s/dispatch! "/abc/search?flavor=pineapple&walnuts=true")
            ["abc" {:flavor "pineapple" :walnuts "true"}])))
 
-  (testing "sec/dispatch! with regex routes"
-    (sec/reset-routes!)
-    (defroute #"/([a-z]+)/(\d+)" [letters digits] [letters digits])
+  (testing "s/dispatch! with regex routes"
+    (s/reset-routes!)
+    (s/defroute #"/([a-z]+)/(\d+)" [letters digits] [letters digits])
 
-    (is (= (sec/dispatch! "/xyz/123")
+    (is (= (s/dispatch! "/xyz/123")
            ["xyz" "123"])))
 
-  (testing "sec/dispatch! with vector routes"
-    (sec/reset-routes!)
-    (defroute ["/:num/socks" :num #"[0-9]+"] {:keys [num]} (str num"socks"))
+  (testing "s/dispatch! with vector routes"
+    (s/reset-routes!)
+    (s/defroute ["/:num/socks" :num #"[0-9]+"] {:keys [num]} (str num"socks"))
 
-    (is (= (sec/dispatch! "/bacon/socks") nil))
-    (is (= (sec/dispatch! "/123/socks") "123socks")))
+    (is (= (s/dispatch! "/bacon/socks") nil))
+    (is (= (s/dispatch! "/123/socks") "123socks")))
 
   (testing "dispatch! with named-routes and configured prefix"
-    (sec/reset-routes!)
+    (s/reset-routes!)
 
-    (binding [sec/*config* (atom {:prefix "#"})]
-      (defroute root-route "/" [] "BAM!")
-      (defroute users-route "/users" [] "ZAP!")
-      (defroute user-route "/users/:id" {:as params} params)
+    (binding [s/*config* (atom {:prefix "#"})]
+      (s/defroute root-route "/" [] "BAM!")
+      (s/defroute users-route "/users" [] "ZAP!")
+      (s/defroute user-route "/users/:id" {:as params} params)
 
-      (is (= (sec/dispatch! (root-route))
+      (is (= (s/dispatch! (root-route))
              "BAM!"))
-      (is (= (sec/dispatch! (users-route))
+      (is (= (s/dispatch! (users-route))
              "ZAP!"))
-      (is (= (sec/dispatch! (user-route {:id "2"}))
+      (is (= (s/dispatch! (user-route {:id "2"}))
            {:id "2"}))))
 
   (testing "named routes"
-    (sec/reset-routes!)
+    (s/reset-routes!)
 
-    (defroute food-path "/food/:food" [food])
-    (defroute search-path "/search" [query-params])
+    (s/defroute food-path "/food/:food" [food])
+    (s/defroute search-path "/search" [query-params])
 
     (is (fn? food-path))
-    (is (fn? (defroute "/pickles" {})))
+    (is (fn? (s/defroute "/pickles" {})))
     (is (= (food-path {:food "biscuits"})
            "/food/biscuits"))
 
@@ -215,36 +213,36 @@
       (is (re-find #"tacos=200" url))))
   
   (testing "dispatch! with splat and no home route"
-    (sec/reset-routes!)
+    (s/reset-routes!)
 
-    (defroute "/users/:id" {:as params} params)
-    (defroute "*" [] "SPLAT")
+    (s/defroute "/users/:id" {:as params} params)
+    (s/defroute "*" [] "SPLAT")
 
-    (is (= (sec/dispatch! "/users/1")
+    (is (= (s/dispatch! "/users/1")
            {:id "1"}))
-    (is (= (sec/dispatch! "")
+    (is (= (s/dispatch! "")
            "SPLAT"))
-    (is (= (sec/dispatch! "/users")
+    (is (= (s/dispatch! "/users")
            "SPLAT"))))
 
 (deftest locate-route
   (testing "locate-route includes original route as last value in return vector"
-    (sec/reset-routes!)
+    (s/reset-routes!)
 
-    (defroute "/my-route/:some-param" [params])
-    (defroute #"my-regexp-route-[a-zA-Z]*" [params])
-    (defroute ["/my-vector-route/:some-param", :some-param #"[0-9]+"] [params])
+    (s/defroute "/my-route/:some-param" [params])
+    (s/defroute #"my-regexp-route-[a-zA-Z]*" [params])
+    (s/defroute ["/my-vector-route/:some-param", :some-param #"[0-9]+"] [params])
 
-    (is (= "/my-route/:some-param" (sec/locate-route-value "/my-route/100")))
+    (is (= "/my-route/:some-param" (s/locate-route-value "/my-route/100")))
     ;; is this right? shouldn't this just return nil?
-    (is (thrown? js/Error (sec/locate-route-value "/not-a-route")))
+    (is (thrown? js/Error (s/locate-route-value "/not-a-route")))
 
-    (let [[route & validations] (sec/locate-route-value "/my-vector-route/100")
+    (let [[route & validations] (s/locate-route-value "/my-vector-route/100")
           {:keys [some-param]} (apply hash-map validations)]
       (is (= "/my-vector-route/:some-param" route))
       (is (= (.-source #"[0-9]+")
              (.-source some-param))))
-    (is (thrown? js/Error (sec/locate-route-value "/my-vector-route/foo")))
+    (is (thrown? js/Error (s/locate-route-value "/my-vector-route/foo")))
 
     (is (= (.-source #"my-regexp-route-[a-zA-Z]*")
-           (.-source (sec/locate-route-value "my-regexp-route-test"))))))
+           (.-source (s/locate-route-value "my-regexp-route-test"))))))
