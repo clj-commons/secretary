@@ -278,7 +278,8 @@
                  m
                  (assoc m key [value validation]))
                :else m)))
-          {} (partition 2 validations)))
+          {}
+          (partition 2 validations)))
 
 (defn ^:private params-valid? [params validations]
   (empty? (invalid-params params validations)))
