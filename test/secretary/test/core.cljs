@@ -3,7 +3,7 @@
    [cemerick.cljs.test :as t]
    [secretary.core :as s])
   (:require-macros
-   [cemerick.cljs.test :refer [deftest testing is are])
+   [cemerick.cljs.test :refer [deftest testing is are]]))
 
 ;; ---------------------------------------------------------------------
 ;; Route matching/rendering testing
@@ -102,10 +102,10 @@
 
 ;;; Basic dispatcher
 
-(defroute r1 "/" {} "BAM!")
-(defroute r2 "/users" {} "ZAP!")
-(defroute r3 "/users/:id" {:as params} params)
-(defroute r4 "/users/:id/food/:food" {:as params} params)
+(s/defroute r1 "/" {} "BAM!")
+(s/defroute r2 "/users" {} "ZAP!")
+(s/defroute r3 "/users/:id" {:as params} params)
+(s/defroute r4 "/users/:id/food/:food" {:as params} params)
 
 (def rs [r1 r2 r3 r4])
 
@@ -129,16 +129,16 @@
 
 ;;; URI dispatcher
 
-(defroute ur1 "/" {:as req}
+(s/defroute ur1 "/" {:as req}
   req)
 
-(defroute ur2 #"/([a-z]+)" {[letters] :params qps :query-params :as req}
+(s/defroute ur2 #"/([a-z]+)" {[letters] :params qps :query-params :as req}
   [letters qps])
 
-(defroute ur3 #"/([a-z]+)/(\d+)" {[letters digits] :params}
+(s/defroute ur3 #"/([a-z]+)/(\d+)" {[letters digits] :params}
   [letters digits])
 
-(defroute ur4 ["/:num/socks" :num #"[0-9]+"] {{:keys [num]} :params}
+(s/defroute ur4 ["/:num/socks" :num #"[0-9]+"] {{:keys [num]} :params}
   (str num "socks"))
 
 (def d2
