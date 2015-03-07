@@ -70,10 +70,10 @@
     (is (= (s/render-route "/*id/:id" {:id [1 2]})
            "/1/2"))
     (is (= (s/render-route "/*x/*y" {:x "lmao/rofl/gtfo"
-                                             :y "k/thx/bai"})
+                                     :y "k/thx/bai"})
            "/lmao/rofl/gtfo/k/thx/bai"))
     (is (= (s/render-route "/*.:format" {:* "blood"
-                                                 :format "tarzan"})
+                                         :format "tarzan"})
            "/blood.tarzan"))
     (is (= (s/render-route "/*.*" {:* ["stab" "wound"]})
            "/stab.wound"))
