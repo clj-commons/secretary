@@ -53,25 +53,36 @@ accept those parameters.
 
 `defroute` is Secretary's primary macro for defining a link between a
 route matcher and an action. The signature of this macro is
-`[name? route destruct & body]`. We will skip the `name?` part
+`[name route destruct & body]`. We will skip the `name` part
 of the signature for now and return to it when we discuss
 [named routes](#named-routes). To get clearer picture of this
 let's define a route for users with an id.
 
 ```clojure
-(defroute "/users/:id" {:as params}
-  (js/console.log (str "User: " (:id params))))
+(defroute show-user "/users/:id" {{:keys [id]} :params}
+  (js/console.log (str "User: " id)))
 ```
 
-In this example `"/users/:id"` is `route`, the route matcher,
-`{:as params}` is `destruct`, the destructured parameters extracted
-from the route matcher result, and the remaining
+In this example `show-user` is `name`, `"/users/:id"` is `route`, the
+route matcher, `{:as params}` is `destruct`, the destructured
+parameters extracted from the route matcher result, and the remaining
 `(js/console.log ...)` portion is `body`, the route action.
 
-Before going in to more detail let's try to dispatch our route.
+Before going in to more detail let's try to dispatch our route. First,
+we'll need to create a dispatcher. We can use Seretary's built-in
+`uri-dispatcher` for the job.
 
 ```clojure
-(secretary/dispatch! "/users/gf3")
+(def dispatch!
+  (secretary/uri-dispatcher [show-user]))
+```
+
+This returns a function which contains all of the necessary wiring for
+matching a route and dispatching it's corresponding action. Let's try
+it out.
+
+```clojure
+(dispatch! "/users/gf3")
 ```
 
 With any luck, when we refresh the page and view the console we should
@@ -99,7 +110,7 @@ Route matcher        | URI              | Parameters
 ---------------------|------------------|--------------------------
 `"/:x/:y"`           | `"/foo/bar"`     | `{:x "foo" :y "bar"}`
 `"/:x/:x"`           | `"/foo/bar"`     | `{:x ["foo" "bar"]}`
-`"/files/*.:format"`  | `"/files/x.zip"` | `{:* "x" :format "zip"}`
+`"/files/*.:format"` | `"/files/x.zip"` | `{:* "x" :format "zip"}`
 `"*"`                | `"/any/thing"`   | `{:* "/any/thing"}`
 `"/*/*"`             | `"/n/e/thing"`   | `{:* ["n" "e/thing"]}`
 `"/*x/*y"`           | `"/n/e/thing"`   | `{:x "n" :y "e/thing"}`
@@ -117,7 +128,7 @@ them. Under the hood, for example with our users route, this looks
 something like the following.
 
 ```clojure
-(let [{:as params} {:id "gf3"}]
+(let [{:as params} {:params {:id "gf3"}]
   ...)
 ```
 
@@ -125,7 +136,7 @@ Given this, it should be fairly easy to see that we could have have
 written
 
 ```clojure
-(defroute "/users/:id" {id :id}
+(defroute show-user "/users/:id" {{id :id} :params}
   (js/console.log (str "User: " id)))
 ```
 
@@ -133,17 +144,15 @@ and seen the same result. With string route matchers we can go even
 further and write
 
 ```clojure
-(defroute "/users/:id" [id]
+(defroute show-user "/users/:id" [id]
   (js/console.log (str "User: " id)))
 ```
-
-which is essentially the same as saying `{:keys [id]}`.
 
 For regular expression route matchers we can only use vectors for
 destructuring since they only ever return vectors.
 
 ```clojure
-(defroute #"/users/(\d+)" [id]
+(defroute show-user #"/users/(\d+)" [id]
   (js/console.log (str "User: " id)))
 ```
 
@@ -155,28 +164,28 @@ If a URI contains a query string it will automatically be extracted to
 regular expression matchers.
 
 ```clojure
-(defroute "/users/:id" [id query-params]
+(defroute show-user "/users/:id" [id query-params]
   (js/console.log (str "User: " id))
   (js/console.log (pr-str query-params)))
 
-(defroute #"/users/(\d+)" [id {:keys [query-params]}]
+(defroute show-user #"/users/(\d+)" [id {:keys [query-params]}]
   (js/console.log (str "User: " id))
   (js/console.log (pr-str query-params)))
 
 ;; In both instances...
-(secretary/dispatch! "/users/10?action=delete")
+(dispatch! "/users/10?action=delete")
 ;; ... will log
 ;; User: 10
 ;; "{:action \"delete\"}"
 ```
 
 
-#### Named routes
+#### Route rendering 
 
 While route matching and dispatch is by itself useful, it is often
 necessary to have functions which take a map of parameters and return
-a URI. By passing an optional name to `defroute` Secretary will
-define this function for you.
+a URI. Routes defined with `defroute` will automatically support this
+feature for you.
 
 ```clojure
 (defroute users-path "/users" []
@@ -218,6 +227,7 @@ records if you need special functionality.
 
 - [`IRenderRoute`](#irenderroute)
 - [`IRouteMatches`](#iroutematches)
+- [`IRouteValue`](#iroutevalue)
 
 
 #### `IRenderRoute`
@@ -288,7 +298,7 @@ vector.
   (set-html! application "<h1>YOU HIT THE JACKPOT!</h1>"))
 
 ;; Catch all
-(defroute "*" []
+(defroute wildcard "*" []
   (set-html! application "<h1>LOL! YOU LOST!</h1>"))
 
 ;; Quick and dirty history configuration.
