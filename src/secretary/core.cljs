@@ -5,6 +5,11 @@
   (:require-macros
    [secretary.core :refer [defroute]]))
 
+(def ^:dynamic *route-prefix* "")
+
+(defn set-route-prefix! [prefix]
+  (set! *route-prefix* prefix))
+
 ;; ---------------------------------------------------------------------
 ;; Protocols
 
@@ -248,8 +253,8 @@
                              replacement)))]
       (if-let [query-string (and query-params
                                  (codec/encode-query-params query-params))]
-        (str path "?" query-string)
-        path))))
+        (str *route-prefix* path "?" query-string)
+        (str *route-prefix* path)))))
 
 
 ;;; RegExp

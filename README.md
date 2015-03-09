@@ -64,7 +64,7 @@ let's define a route for users with an id.
 ```
 
 In this example `show-user` is `name`, `"/users/:id"` is `route`, the
-route matcher, `{:as params}` is `destruct`, the destructured
+route matcher, `{{:keys [id]} :params}` is `destruct`, the destructured
 parameters extracted from the route matcher result, and the remaining
 `(js/console.log ...)` portion is `body`, the route action.
 
@@ -94,7 +94,7 @@ see that `User: gf3` has been logged somewhere.
 By default the route matcher may either be a string or regular
 expression. String route matchers have special syntax which may be
 familiar to you if you've worked with [Sinatra][sinatra] or
-[Ruby on Rails][rails]. When `secretary/dispatch!` is called with a
+[Ruby on Rails][rails]. When `dispatch!` is called with a
 URI it attempts to find a route match and it's corresponding
 action. If the match is successful, parameters will be extracted from
 the URI. For string route matchers these will be contained in a map;
@@ -128,7 +128,7 @@ them. Under the hood, for example with our users route, this looks
 something like the following.
 
 ```clojure
-(let [{:as params} {:params {:id "gf3"}]
+(let [{{id :id} :params} {:params {:id "gf3"}]
   ...)
 ```
 
@@ -160,16 +160,15 @@ destructuring since they only ever return vectors.
 #### Query parameters
 
 If a URI contains a query string it will automatically be extracted to
-`:query-params` for string route matchers and to the last element for
-regular expression matchers.
+`:query-params`.
 
 ```clojure
-(defroute show-user "/users/:id" [id query-params]
-  (js/console.log (str "User: " id))
+(defroute show-user "/users/:id" {:keys [params query-params]}
+  (js/console.log (pr-str (:id params)))
   (js/console.log (pr-str query-params)))
 
-(defroute show-user #"/users/(\d+)" [id {:keys [query-params]}]
-  (js/console.log (str "User: " id))
+(defroute show-user #"/users/(\d+)" {:keys [params query-params]}
+  (js/console.log (str "User: " (first params)))
   (js/console.log (pr-str query-params)))
 
 ;; In both instances...
@@ -209,7 +208,7 @@ If the browser you're targeting does not support HTML5 history you can
 call
 
 ```clojure
-(secretary/set-config! :prefix "#")
+(secretary/set-route-prefix! "#")
 ```
 
 to prefix generated URIs with a "#".
