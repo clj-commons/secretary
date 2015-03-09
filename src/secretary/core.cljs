@@ -203,9 +203,10 @@
      (uri-dispatcher routes identity))
   ([routes handler]
      (fn [uri]
-       (let [h (-> (handler identity)
+       (let [h (-> identity
+                   (wrap-query-params)
                    (wrap-route routes)
-                   (wrap-query-params))
+                   (handler))
              {:keys [route] :as req} (h (request-map uri))]
          (when route
            (let [req-map (-> (dissoc req :route)
