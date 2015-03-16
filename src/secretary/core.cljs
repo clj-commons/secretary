@@ -367,36 +367,36 @@
 
 (extend-protocol IRenderRoute
   string
-  (render-route [this]
-    (render-route this {}))
-
-  (render-route [this params]
-    (let [{:keys [query-params] :as m} params
-          a (atom m)
-          path (.replace this (js/RegExp. ":[^\\s.:*/]+|\\*[^\\s.:*/]*" "g")
-                         (fn [$1]
-                           (let [lookup (keyword (if (= $1 "*")
-                                                   $1
-                                                   (subs $1 1)))
-                                 v (get @a lookup)
-                                 replacement (if (sequential? v)
-                                               (do
-                                                 (swap! a assoc lookup (next v))
-                                                 (encode-uri (first v)))
-                                               (if v (encode-uri v) $1))]
-                             replacement)))
-          path (str (get-config [:prefix]) path)]
-      (if-let [query-string (and query-params
-                                 (encode-query-params query-params))]
-        (str path "?" query-string)
-        path)))
+  (render-route
+    ([this]
+       (render-route this {}))
+    ([this params]
+       (let [{:keys [query-params] :as m} params
+             a (atom m)
+             path (.replace this (js/RegExp. ":[^\\s.:*/]+|\\*[^\\s.:*/]*" "g")
+                            (fn [$1]
+                              (let [lookup (keyword (if (= $1 "*")
+                                                      $1
+                                                      (subs $1 1)))
+                                    v (get @a lookup)
+                                    replacement (if (sequential? v)
+                                                  (do
+                                                    (swap! a assoc lookup (next v))
+                                                    (encode-uri (first v)))
+                                                  (if v (encode-uri v) $1))]
+                                replacement)))
+             path (str (get-config [:prefix]) path)]
+         (if-let [query-string (and query-params
+                                    (encode-query-params query-params))]
+           (str path "?" query-string)
+           path))))
 
   cljs.core/PersistentVector
-  (render-route [this]
-    (render-route this {}))
-
-  (render-route [[route-string & validations] params]
-    (let [invalid (invalid-params params validations)]
-      (if (empty? invalid)
-        (render-route route-string params)
-        (throw (ex-info "Could not build route: invalid params" invalid))))))
+  (render-route
+    ([this]
+       (render-route this {}))
+    ([[route-string & validations] params]
+       (let [invalid (invalid-params params validations)]
+         (if (empty? invalid)
+           (render-route route-string params)
+           (throw (ex-info "Could not build route: invalid params" invalid)))))))
