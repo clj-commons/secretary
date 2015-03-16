@@ -25,7 +25,7 @@ A client-side router for ClojureScript.
 Add secretary to your `project.clj` `:dependencies` vector:
 
 ```clojure
-[secretary "1.2.1"]
+[secretary "1.2.2"]
 ```
 
 For the current `SNAPSHOT` version use:
