@@ -31,7 +31,7 @@ Add secretary to your `project.clj` `:dependencies` vector:
 For the current `SNAPSHOT` version use:
 
 ```clojure
-[secretary "1.2.2-SNAPSHOT"]
+[secretary "1.2.3-SNAPSHOT"]
 ```
 
 ## Guide
