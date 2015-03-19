@@ -180,7 +180,9 @@
 ;; URI dispatcher
 
 (defn request-map [s]
-  (let [[uri query-string] (string/split (or s "") #"\?")]
+  (let [[uri query-string] (string/split (str s) #"\?")
+        uri (str uri)
+        query-string (str query-string)]
     {:uri uri
      :query-string query-string}))
 

@@ -151,6 +151,8 @@
   (testing "uri-dispatcher (string routes)"
     (is (contains? (d2 "/") :query-params))
 
+    (is (nil? (d2 nil)))
+
     (let [m (d2 "/?foo=bar")]
       (is (and (contains? m :query-params)
                (contains? (:query-params m) :foo))))
