@@ -33,7 +33,7 @@
   (-route-value route))
 
 (defn render-route
-  "Return a representation of route optionally with params. route must 
+  "Return a representation of route optionally with params. route must
   satisfy IRenderRoute."
   ([route] (-render-route route))
   ([route params] (-render-route route params)))
@@ -203,8 +203,8 @@
       (handler req))))
 
 (defn uri-dispatcher
-  "Return a dispatcher which when invoked with a uri attempts 
-  to locate, match, and apply a routing action. Optionally a ring-style 
+  "Return a dispatcher which when invoked with a uri attempts
+  to locate, match, and apply a routing action. Optionally a ring-style
   handler may be passed."
   ([routes]
      (uri-dispatcher routes identity))
@@ -235,28 +235,27 @@
     (-route-matches (compile-route this) route))
 
   IRenderRoute
-  (-render-route [this]
-    (-render-route this {}))
-
-  (-render-route [this params]
-    (let [{:keys [query-params] :as m} params
-          a (atom m)
-          path (.replace this (js/RegExp. ":[^\\s.:*/]+|\\*[^\\s.:*/]*" "g")
-                         (fn [$1]
-                           (let [lookup (keyword (if (= $1 "*")
-                                                   $1
-                                                   (subs $1 1)))
-                                 v (get @a lookup)
-                                 replacement (if (sequential? v)
-                                               (do
-                                                 (swap! a assoc lookup (next v))
-                                                 (codec/encode-uri (first v)))
-                                               (if v (codec/encode-uri v) $1))]
-                             replacement)))]
-      (if-let [query-string (and query-params
-                                 (codec/encode-query-params query-params))]
-        (str *route-prefix* path "?" query-string)
-        (str *route-prefix* path)))))
+  (-render-route
+    ([this] (-render-route this {}))
+    ([this params]
+     (let [{:keys [query-params] :as m} params
+           a (atom m)
+           path (.replace this (js/RegExp. ":[^\\s.:*/]+|\\*[^\\s.:*/]*" "g")
+                          (fn [$1]
+                            (let [lookup (keyword (if (= $1 "*")
+                                                    $1
+                                                    (subs $1 1)))
+                                  v (get @a lookup)
+                                  replacement (if (sequential? v)
+                                                (do
+                                                  (swap! a assoc lookup (next v))
+                                                  (codec/encode-uri (first v)))
+                                                (if v (codec/encode-uri v) $1))]
+                              replacement)))]
+       (if-let [query-string (and query-params
+                                  (codec/encode-query-params query-params))]
+         (str *route-prefix* path "?" query-string)
+         (str *route-prefix* path))))))
 
 
 ;;; RegExp
@@ -305,11 +304,10 @@
         params)))
 
   IRenderRoute
-  (-render-route [this]
-    (-render-route this {}))
-
-  (-render-route [[route-string & validations] params]
-    (let [invalid (invalid-params params validations)]
-      (if (empty? invalid)
-        (render-route route-string params)
-        (throw (ex-info "Could not build route: invalid params" invalid))))))
+  (-render-route
+    ([this] (-render-route this {}))
+    ([[route-string & validations] params]
+     (let [invalid (invalid-params params validations)]
+       (if (empty? invalid)
+         (render-route route-string params)
+         (throw (ex-info "Could not build route: invalid params" invalid)))))))
