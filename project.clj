@@ -29,7 +29,7 @@
   :profiles
   {:dev {:source-paths ["dev/" "src/"]
          :dependencies
-         [[org.clojure/clojurescript "0.0-3030"]
+         [[org.clojure/clojurescript "0.0-3211"]
           [com.cemerick/piggieback "0.1.6-SNAPSHOT"]
           [weasel "0.6.0"]
           [spellhouse/clairvoyant "0.0-33-g771b57f"]]
