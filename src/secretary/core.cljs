@@ -150,6 +150,7 @@
   (-render-route [this]
     (when (satisfies? IRenderRoute pattern)
       (-render-route pattern)))
+
   (-render-route [this params]
     (when (satisfies? IRenderRoute pattern)
       (-render-route pattern params)))
