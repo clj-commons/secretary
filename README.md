@@ -40,7 +40,7 @@ To get started `:require` secretary somewhere in your project.
 
 ```clojure
 (ns app.routes
-  (:require [secretary.core :as secretary :refer-macros [defroute]])
+  (:require [secretary.core :as secretary :refer-macros [defroute]]))
 ```
 
 
