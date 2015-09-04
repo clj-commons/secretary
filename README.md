@@ -257,7 +257,7 @@ vector.
 
 ```clojure
 (ns example
-  (:require [secretary.core :as secretary :include-macros true :refer [defroute]]
+  (:require [secretary.core :as secretary :refer-macros [defroute]]
             [goog.events :as events]
             [goog.history.EventType :as EventType])
   (:import goog.History))
