@@ -42,7 +42,7 @@ To get started `:require` secretary somewhere in your project.
 (ns app.routes
   (:require [secretary.core :as secretary :refer-macros [defroute]]))
 ```
-
+**Note**: starting ClojureScript v0.0-2371, `:refer` cannot be used to import macros into your project anymore. The proper way to do it is by using `:refer-macros` as above. When using ClojureScript v0.0-2755 or above, if `(:require [secretary.core :as secretary])` is used, macros will be automatically aliased to `secretary`, e.g. `secretary/defroute`.
 
 ### Basic routing and dispatch
 
