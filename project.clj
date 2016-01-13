@@ -35,14 +35,16 @@
           [spellhouse/clairvoyant "0.0-72-g15e1e44"]]
          :plugins
          [[lein-cljsbuild "1.1.2"]
-          [com.cemerick/clojurescript.test "0.2.3-SNAPSHOT"]]
+          [lein-doo "0.1.6"]]
          :repl-options
          {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}}
 
+  :doo {:build "test"}
+
   :aliases
-  {"run-tests" ["do" "clean," "cljsbuild" "once" "test"]
-   "test-once" ["do" "clean," "cljsbuild" "once" "test"]
-   "auto-test" ["do" "clean," "cljsbuild" "auto" "test"]}
+  {"run-tests" ["do" "clean," "doo" "phantom" "test" "once"]
+   "test-once" ["do" "clean," "doo" "phantom" "test" "once"]
+   "auto-test" ["do" "clean," "doo" "phantom" "test" "auto"]}
 
   :cljsbuild
   {:builds [{:id "dev"
@@ -55,8 +57,8 @@
 
             {:id "test"
              :source-paths ["src/" "test/"]
-             :notify-command ["phantomjs" :cljs.test/runner "target/js/test.js"]
-             :compiler {:output-to "target/js/test.js"
+             :compiler {:main secretary.test.runner
+                        :output-to "target/js/test.js"
                         :optimizations :whitespace
                         :pretty-print true}}
 
