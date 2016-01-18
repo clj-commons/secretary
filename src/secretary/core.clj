@@ -3,28 +3,20 @@
 (defn ^:private route-action-form [destruct body]
   (let [params (gensym)]
     `(fn [~params]
-       (cond
-        (map? ~params)
-        (if (:ring-route? (meta ~params))
-          ~(cond
-            (map? destruct)
-            `(let [~destruct ~params]
-               ~@body)
+       (let [~@(cond
+                 (or (map? destruct)
+                     (vector? params))
+                 [destruct params]
 
-            (vector? destruct)
-            `(if (map? (:params ~params))
-               (let [{:keys ~destruct} (:params ~params)]
-                 ~@body)
-               (let [~destruct (:params ~params)]
-                 ~@body)))
-          (let [~(if (vector? destruct)
-                   {:keys destruct}
-                   destruct) ~params]
-            ~@body))
+                 (:ring-route? (meta params))
+                 [{:keys destruct} params]
 
-        (vector? ~params)
-        (let [~destruct ~params]
-          ~@body)))))
+                 (map? (:params params))
+                 [{:keys destruct} (:params params)]
+
+                 (vector? (:params params))
+                 [destruct (:params params)])]
+         ~@body))))
 
 (defn- binding-exception [type destruct]
   (IllegalArgumentException.
