@@ -18,22 +18,18 @@
                  [destruct (:params params)])]
          ~@body))))
 
-(defn- binding-exception [type destruct]
-  (IllegalArgumentException.
-   (str type " bindings must be a map or vector, given " (pr-str destruct))))
-
 (defmacro ^{:arglists '([pattern destruct & body])}
   route
   "Define an anonymous instance of secretary.core/Route."
   [pattern destruct & body]
   (when-not (or (map? destruct) (vector? destruct))
-    (throw (binding-exception "route" destruct)))
+    (throw (IllegalArgumentException.
+            (str "route bindings must be a map or vector, given "
+                 (pr-str destruct)))))
   `(secretary.core/make-route ~pattern ~(route-action-form destruct body)))
 
 (defmacro ^{:arglists '([name pattern destruct & body])}
   defroute
   "Define a named instance of secretary.core/Route."
   [name pattern destruct & body]
-  (when-not (or (map? destruct) (vector? destruct))
-    (throw (binding-exception "defroute" destruct)))
   `(def ~name (route ~pattern ~destruct ~body)))
