@@ -203,7 +203,7 @@ call
 (secretary/set-config! :prefix "#")
 ```
 
-to prefix generated URIs with a "#".
+to prefix generated URIs with a "#". Beware resulting URIs will no longer comply with [standard syntax](https://en.wikipedia.org/wiki/Uniform_Resource_Locator#Syntax) (fragment must be the last part of the URI after the query).
 
 ```clojure
 (user-path {:id 1})
