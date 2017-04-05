@@ -161,7 +161,7 @@
                   ;; We only want two parts since the part on the right hand side
                   ;; could potentially contain an =.
                   (let [[k v] (string/split part #"=" 2)]
-                    (assoc-in-query-params m (key-parse k) (decode v))))
+                    (assoc-in-query-params m (key-parse (decode k)) (decode v))))
                 {}
                 parts)
         params (keywordize-keys params)]
