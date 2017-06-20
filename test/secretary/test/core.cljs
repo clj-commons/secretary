@@ -28,7 +28,7 @@
     (are [x y] (= (s/decode-query-params x) y)
       "x[]=1&x[]=2" {:x ["1" "2"]}
       "a[0][b]=1&a[1][b]=2" {:a [{:b "1"} {:b "2"}]}
-      "a[0][b][]=1&a[0][b][]=2&a[1][b][]=3&a[1][b][]=4" {:a [{:b ["1" "2"]} {:b ["3" "4"]}]})))
+      "a[0][b][]=1&a[0][b][]=2&a[1][b][]=?3&a[1][b][]=4" {:a [{:b ["1" "2"]} {:b ["?3" "4"]}]})))
 
 (deftest route-matches-test
   (testing "non-encoded-routes"
