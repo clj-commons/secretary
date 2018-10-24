@@ -249,6 +249,7 @@
        (when-let [[_ & ms] (re-matches* re route)]
          (->> (interleave params (map decode ms))
               (partition 2)
+              (map (fn [[k v]] (MapEntry. k v nil)))
               (merge-with vector {})))))))
 
 ;;----------------------------------------------------------------------
