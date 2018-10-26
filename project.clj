@@ -1,4 +1,4 @@
-(defproject secretary "1.2.4-SNAPSHOT"
+(defproject wagjo/secretary "1.2.5"
   :description "A client-side router for ClojureScript."
   :url "https://github.com/gf3/secretary"
   :license {:name "Eclipse Public License - v 1.0"
