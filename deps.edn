@@ -1,0 +1,5 @@
+{:deps {}
+ :aliases {:test
+           {:extra-deps {org.clojure/clojurescript {:mvn/version "RELEASE"}
+                         org.clojure/test.check {:mvn/version "RELEASE"}}
+            :extra-paths ["test"]}}}

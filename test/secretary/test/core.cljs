@@ -159,8 +159,9 @@
       (is (= (s/dispatch! r)
              {:foo p1 :bar p2})))
 
-    (s/defroute #"/([a-z]+)/search" [letters {:keys [query-params]}]
-      [letters query-params])
+    (s/defroute #"/([a-z]+)/search" {:as params}
+      (let [[letters {:keys [query-params]}] params]
+        [letters query-params]))
 
     (is (= (s/dispatch! "/abc/search")
            ["abc" nil]))

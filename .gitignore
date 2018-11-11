@@ -16,3 +16,5 @@ pom.xml.asc
 *\#
 .repl/*
 out/*
+/.cljs_node_repl
+/.cpcache
