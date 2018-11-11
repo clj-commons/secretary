@@ -4,6 +4,7 @@ A client-side router for ClojureScript.
 
 [![CircleCI](https://circleci.com/gh/clj-commons/secretary.svg?style=svg)](https://circleci.com/gh/clj-commons/secretary)
 
+[![Clojars Project](https://img.shields.io/clojars/v/clj-commons/secretary.svg)](https://clojars.org/clj-commons/secretary)
 
 ## Contents
 
