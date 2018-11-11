@@ -2,7 +2,7 @@
 
 A client-side router for ClojureScript.
 
-[ ![Codeship Status for gf3/secretary](https://app.codeship.com/projects/0b3ff6f0-ca42-0131-5e5a-5e2103a31145/status?branch=master)](https://app.codeship.com/projects/22531)
+[![CircleCI](https://circleci.com/gh/clj-commons/secretary.svg?style=svg)](https://circleci.com/gh/clj-commons/secretary)
 
 
 ## Contents
