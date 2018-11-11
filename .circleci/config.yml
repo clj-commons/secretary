@@ -7,7 +7,7 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-      - image: circleci/clojure:lein-2.7.1
+      - image: circleci/clojure:lein-2.8.1-node
       
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -31,6 +31,8 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
+      - run: npm install phantomjs-prebuilt
+
       - run: lein deps
 
       - save_cache:
@@ -39,4 +41,5 @@ jobs:
           key: v1-dependencies-{{ checksum "project.clj" }}
         
       # run tests!
-      - run: lein test
+      - run: PATH=~/repo/node_modules/phantomjs-prebuilt/lib/phantom/bin:$PATH lein run-tests | tee test-out.txt
+      - run: grep '0 failures, 0 errors.' test-out.txt
