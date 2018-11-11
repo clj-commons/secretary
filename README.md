@@ -25,13 +25,13 @@ A client-side router for ClojureScript.
 Add secretary to your `project.clj` `:dependencies` vector:
 
 ```clojure
-[secretary "1.2.3"]
+[clj-commons/secretary "1.2.4"]
 ```
 
 For the current `SNAPSHOT` version use:
 
 ```clojure
-[secretary "1.2.4-SNAPSHOT"]
+[clj-commons/secretary "1.2.5-SNAPSHOT"]
 ```
 
 ## Guide
