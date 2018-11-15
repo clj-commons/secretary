@@ -1,9 +1,7 @@
 (ns secretary.test.codec
   (:require
-   [cemerick.cljs.test :as t]
-   [secretary.codec :as codec])
-  (:require-macros
-   [cemerick.cljs.test :refer [deftest testing is are]]))
+   [cljs.test :as t :refer-macros [deftest testing is are]]
+   [secretary.codec :as codec]))
 
 (deftest query-params-test
   (testing "encodes query params"

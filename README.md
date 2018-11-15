@@ -25,7 +25,7 @@ A client-side router for ClojureScript.
 Add secretary to your `project.clj` `:dependencies` vector:
 
 ```clojure
-[secretary "1.2.1"]
+[secretary "1.2.3"]
 ```
 
 For the current `SNAPSHOT` version use:
@@ -40,9 +40,9 @@ To get started `:require` secretary somewhere in your project.
 
 ```clojure
 (ns app.routes
-  (:require [secretary.core :as secretary :refer-macros [defroute]])
+  (:require [secretary.core :as secretary :refer-macros [defroute]]))
 ```
-
+**Note**: starting ClojureScript v0.0-2371, `:refer` cannot be used to import macros into your project anymore. The proper way to do it is by using `:refer-macros` as above. When using ClojureScript v0.0-2755 or above, if `(:require [secretary.core :as secretary])` is used, macros will be automatically aliased to `secretary`, e.g. `secretary/defroute`.
 
 ### Basic routing and dispatch
 
@@ -179,7 +179,7 @@ If a URI contains a query string it will automatically be extracted to
 ```
 
 
-#### Route rendering 
+#### Route rendering
 
 While route matching and dispatch is by itself useful, it is often
 necessary to have functions which take a map of parameters and return
@@ -266,7 +266,7 @@ vector.
 
 ```clojure
 (ns example
-  (:require [secretary.core :as secretary :include-macros true :refer [defroute]]
+  (:require [secretary.core :as secretary :refer-macros [defroute]]
             [goog.events :as events]
             [goog.history.EventType :as EventType])
   (:import goog.History))

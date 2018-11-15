@@ -1,9 +1,7 @@
 (ns secretary.test.core
   (:require
-   [cemerick.cljs.test :as t]
-   [secretary.core :as s])
-  (:require-macros
-   [cemerick.cljs.test :refer [deftest testing is are]]))
+   [cljs.test :as t :refer-macros [deftest testing is are]]
+   [secretary.core :as s]))
 
 ;; ---------------------------------------------------------------------
 ;; Route matching/rendering testing
@@ -114,7 +112,7 @@
                        (when-let [ms (s/route-matches r uri)]
                          [r ms]))
                      rs)]
-    (when r (.action r ms)))) 
+    (when r (.action r ms))))
 
 (deftest defroute-test
   (testing "dispatch! with basic routes"

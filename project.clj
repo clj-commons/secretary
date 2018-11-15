@@ -24,25 +24,27 @@
             :comments "same as Clojure"}
 
   :dependencies
-  [[org.clojure/clojure "1.6.0"]]
+  [[org.clojure/clojure "1.7.0"]]
 
   :profiles
   {:dev {:source-paths ["dev/" "src/"]
          :dependencies
-         [[org.clojure/clojurescript "0.0-3211"]
-          [com.cemerick/piggieback "0.1.6-SNAPSHOT"]
-          [weasel "0.6.0"]
-          [spellhouse/clairvoyant "0.0-33-g771b57f"]]
+         [[org.clojure/clojurescript "1.7.228"]
+          [com.cemerick/piggieback "0.2.1"]
+          [weasel "0.7.0"]
+          [spellhouse/clairvoyant "0.0-72-g15e1e44"]]
          :plugins
-         [[lein-cljsbuild "1.0.5"]
-          [com.cemerick/clojurescript.test "0.2.3-SNAPSHOT"]]
+         [[lein-cljsbuild "1.1.2"]
+          [lein-doo "0.1.6"]]
          :repl-options
          {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}}
 
+  :doo {:build "test"}
+
   :aliases
-  {"run-tests" ["do" "clean," "cljsbuild" "once" "test"]
-   "test-once" ["do" "clean," "cljsbuild" "once" "test"]
-   "auto-test" ["do" "clean," "cljsbuild" "auto" "test"]}
+  {"run-tests" ["do" "clean," "doo" "phantom" "test" "once"]
+   "test-once" ["do" "clean," "doo" "phantom" "test" "once"]
+   "auto-test" ["do" "clean," "doo" "phantom" "test" "auto"]}
 
   :cljsbuild
   {:builds [{:id "dev"
@@ -55,8 +57,8 @@
 
             {:id "test"
              :source-paths ["src/" "test/"]
-             :notify-command ["phantomjs" :cljs.test/runner "target/js/test.js"]
-             :compiler {:output-to "target/js/test.js"
+             :compiler {:main secretary.test.runner
+                        :output-to "target/js/test.js"
                         :optimizations :whitespace
                         :pretty-print true}}
 

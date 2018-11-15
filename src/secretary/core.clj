@@ -3,35 +3,33 @@
 (defn ^:private route-action-form [destruct body]
   (let [params (gensym)]
     `(fn [~params]
-       (cond
-        (map? ~params)
-        (if (:ring-route? (meta ~params))
-          ~(cond
-            (map? destruct)
-            `(let [~destruct ~params]
-               ~@body)
+       (let [~@(cond
+                 (or (map? destruct)
+                     (vector? params))
+                 [destruct params]
 
-            (vector? destruct)
-            `(if (map? (:params ~params))
-               (let [{:keys ~destruct} (:params ~params)]
-                 ~@body)
-               (let [~destruct (:params ~params)]
-                 ~@body)))
-          (let [~(if (vector? destruct)
-                   {:keys destruct}
-                   destruct) ~params]
-            ~@body))
+                 (:ring-route? (meta params))
+                 [{:keys destruct} params]
 
-        (vector? ~params)
-        (let [~destruct ~params]
-          ~@body)))))
+                 (map? (:params params))
+                 [{:keys destruct} (:params params)]
 
-(defmacro ^{:arglists '([name route destruct & body])}
-  defroute
-  "Define an instance of secretary.core/Route."
-  [name pattern destruct & body]
+                 (vector? (:params params))
+                 [destruct (:params params)])]
+         ~@body))))
+
+(defmacro ^{:arglists '([pattern destruct & body])}
+  route
+  "Define an anonymous instance of secretary.core/Route."
+  [pattern destruct & body]
   (when-not (or (map? destruct) (vector? destruct))
     (throw (IllegalArgumentException.
-            (str "defroute bindings must be a map or vector, given " (pr-str destruct)))))
-  `(def ~name
-     (secretary.core/make-route ~pattern ~(route-action-form destruct body))))
+            (str "route bindings must be a map or vector, given "
+                 (pr-str destruct)))))
+  `(secretary.core/make-route ~pattern ~(route-action-form destruct body)))
+
+(defmacro ^{:arglists '([name pattern destruct & body])}
+  defroute
+  "Define a named instance of secretary.core/Route."
+  [name pattern destruct & body]
+  `(def ~name (route ~pattern ~destruct ~body)))
