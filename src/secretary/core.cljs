@@ -315,7 +315,7 @@
 (defn dispatch!
   "Dispatch an action for a given route if it matches the URI path."
   [uri]
-  (let [[uri-path query-string] (string/split (uri-without-prefix uri) #"\?")
+  (let [[uri-path query-string] (string/split (uri-without-prefix uri) #"\?" 2)
         uri-path (uri-with-leading-slash uri-path)
         query-params (when query-string
                        {:query-params (decode-query-params query-string)})
