@@ -212,19 +212,20 @@ to prefix generated URIs with a "#".
 
 ##### This scheme doesn't comply with URI spec
 
-Beware that using prefix that way will make resulting URIs no longer compliant with [standard URI syntax](https://en.wikipedia.org/wiki/Uniform_Resource_Locator#Syntax) – fragment must be the last part of the URI after the query). Indeed, the syntax of an URI is defined as:
+Beware that using `:prefix` that way will make resulting URIs no longer compliant with [standard URI syntax](https://en.wikipedia.org/wiki/Uniform_Resource_Locator#Syntax) – the fragment must be the last part of the URI after the query). Indeed, the syntax of a URI is defined as:
 
     scheme:[//[user:password@]host[:port]][/]path[?query][#fragment]
 
-`secretary` adds a `#` after the path so it makes the fragment hides the query. For instance, the following URL is comprehended two different way by `secretary` and the spec:
+`secretary` adds a `#` after the path so it makes the fragment hide the query. For instance, the following URL is comprehended in different ways by `secretary` and the spec:
 
 ```
 https://www.example.com/path/of/app#path/inside/app?query=params&as=defined&by=secretary
 ```
 
-- fragment: `"path/inside/app?query=params&as=defined&by=secretary"` for standard libraries but is `"path/inside/app"` according to Secretary
+- the fragment is `"path/inside/app?query=params&as=defined&by=secretary"` for standard libraries,
+but is `"path/inside/app"` according to Secretary
 
-- query: `""` but is `"query=params&as=defined&by=secretary"` according to Secretary
+- the query is `""` for standard libraries, but is `"query=params&as=defined&by=secretary"` according to Secretary
 
 
 ### Available protocols
