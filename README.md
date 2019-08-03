@@ -3,7 +3,7 @@
 A client-side router for ClojureScript.
 
 [![Clojars Project](https://img.shields.io/clojars/v/clj-commons/secretary.svg)](https://clojars.org/clj-commons/secretary)
-[![cljdoc badge](https://cljdoc.org/badge/clj-commons/sectretary)](https://cljdoc.org/d/clj-commons/secretary/CURRENT)
+[![cljdoc badge](https://cljdoc.org/badge/clj-commons/secretary)](https://cljdoc.org/d/clj-commons/secretary/CURRENT)
 [![CircleCI](https://circleci.com/gh/clj-commons/secretary/tree/master.svg?style=svg)](https://circleci.com/gh/clj-commons/secretary/tree/master)
 
 
